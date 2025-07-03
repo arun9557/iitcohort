@@ -280,7 +280,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
           destColumn.tasks.push(task);
           
           return newColumns;
-        }
+      }
         
         return columns;
       });
