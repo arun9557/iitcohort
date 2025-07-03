@@ -267,7 +267,13 @@ export default function Whiteboard() {
                         className="border rounded px-2 py-1 text-base shadow"
                         value={textInput}
                         onChange={e => setTextInput(e.target.value)}
-                        onBlur={() => handleTextSubmit as any}
+                        onBlur={() => {
+                          if (textInput.trim() && textPos) {
+                            setObjects((objs) => [...objs, { type: 'text', pos: textPos, text: textInput }]);
+                            setTextInput('');
+                            setTextPos(null);
+                          }
+                        }}
                         style={{ minWidth: 60 }}
                       />
                     </form>
