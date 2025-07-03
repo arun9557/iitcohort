@@ -1,28 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+// import { collection, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   Plus, 
   Search, 
   Edit, 
   Trash2, 
-  Download, 
-  Upload,
   FileText,
-  Image,
-  Video,
-  Music,
-  Archive,
   Star,
-  Share2,
-  MoreVertical,
-  User,
   Calendar,
+  Share2,
+  User,
   Tag
 } from 'lucide-react';
-import { db, storage } from '../firebase';
+// import { db, storage } from '../firebase';
 
 interface Note {
   id: string;
@@ -167,8 +160,8 @@ export default function NotesManager() {
     tags: [],
     category: 'Computer Science'
   });
-  const [file, setFile] = useState<File | null>(null);
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  // const [file, setFile] = useState<File | null>(null);
+  // const [fileUrl, setFileUrl] = useState<string | null>(null);
 
   const filteredNotes = notes.filter(note => {
     const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -192,7 +185,7 @@ export default function NotesManager() {
       updatedAt: new Date().toISOString().split('T')[0],
       isFavorite: false,
       isShared: false,
-      fileUrl: fileUrl || ''
+      fileUrl: ''
     };
 
     setNotes(prev => [note, ...prev]);
@@ -258,19 +251,19 @@ export default function NotesManager() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
-  };
+  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (e.target.files && e.target.files[0]) {
+  //     setFile(e.target.files[0]);
+  //   }
+  // };
 
-  const handleFileUpload = async () => {
-    if (!file) return;
-    const storageRef = ref(storage, `notes/${Date.now()}_${file.name}`);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    setFileUrl(url);
-  };
+  // const handleFileUpload = async () => {
+  //   if (!file) return;
+  //   const storageRef = ref(storage, `notes/${Date.now()}_${file.name}`);
+  //   await uploadBytes(storageRef, file);
+  //   const url = await getDownloadURL(storageRef);
+  //   setFileUrl(url);
+  // };
 
   return (
     <div className="bg-white rounded-lg shadow-sm h-[600px]">
@@ -545,11 +538,11 @@ export default function NotesManager() {
                 />
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium mb-1">File</label>
                 <input type="file" onChange={handleFileChange} />
                 <button onClick={handleFileUpload} className="bg-blue-500 text-white px-3 py-1 rounded ml-2">Upload File</button>
-              </div>
+              </div> */}
             </div>
 
             <div className="flex gap-3 mt-6">

@@ -8,7 +8,6 @@ import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firesto
 import { motion } from 'framer-motion';
 import { 
   Users, 
-  Calendar, 
   FileText, 
   BookOpen, 
   MessageCircle, 
@@ -18,9 +17,6 @@ import {
   Bell,
   Settings,
   LogOut,
-  Grid,
-  Layout,
-  BarChart3,
   X,
   Video,
   Image,
@@ -494,7 +490,7 @@ const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => 
 );
 
 const LibrarySection = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
-  const [recentFiles, setRecentFiles] = useState([
+  const [recentFiles] = useState([
     { id: '1', title: 'Data Structures Notes.pdf', type: 'document', size: '2.3 MB', uploadedBy: 'Prof. Sharma', date: '2 hours ago' },
     { id: '2', title: 'Machine Learning Lecture.mp4', type: 'video', size: '45.2 MB', uploadedBy: 'Dr. Patel', date: '1 day ago' },
     { id: '3', title: 'Chemistry Lab Report.docx', type: 'document', size: '1.1 MB', uploadedBy: 'Student', date: '3 days ago' }
@@ -504,7 +500,7 @@ const LibrarySection = ({ setActiveTab }: { setActiveTab: (tab: string) => void 
     switch (type) {
       case 'document': return <FileText className="w-4 h-4 text-blue-500" />;
       case 'video': return <Video className="w-4 h-4 text-red-500" />;
-      case 'image': return <Image className="w-4 h-4 text-green-500" />;
+      case 'image': return <Image className="w-4 h-4 text-green-500" alt="" />;
       case 'audio': return <Music className="w-4 h-4 text-purple-500" />;
       default: return <FileText className="w-4 h-4 text-gray-500" />;
     }
@@ -848,17 +844,7 @@ const FuturePlanningSection = ({
   );
 };
 
-const tabs = [
-  { id: 'dashboard', label: 'Dashboard', icon: Grid },
-  { id: 'projects', label: 'Projects', icon: FileText },
-  { id: 'kanban', label: 'Task Board', icon: Layout },
-  { id: 'meetings', label: 'Meetings', icon: Calendar },
-  { id: 'notes', label: 'Notes', icon: FileText },
-  { id: 'whiteboard', label: 'Whiteboard', icon: BarChart3 },
-  { id: 'library', label: 'Library', icon: FileText },
-  { id: 'voice', label: 'Voice Chat', icon: Grid },
-  { id: 'members', label: 'Members', icon: Users }
-];
+// Tab configuration moved to component usage
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);

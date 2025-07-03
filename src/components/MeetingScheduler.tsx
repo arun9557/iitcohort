@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Calendar,
@@ -10,23 +10,13 @@ import {
   Edit,
   Trash2,
   Video,
-  Link,
   MapPin,
-  Bell,
   CheckCircle,
-  AlertCircle,
-  Info,
-  ExternalLink,
-  Copy,
-  Share2,
-  Settings,
-  Filter,
-  Search,
-  MoreVertical
+  AlertCircle
 } from 'lucide-react';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import dynamic from 'next/dynamic';
+// import dynamic from 'next/dynamic';
 
 interface Meeting {
   id: string;
@@ -88,10 +78,10 @@ const initialMeetings: Meeting[] = [
   }
 ];
 
-const Excalidraw = dynamic(
-  () => import('@excalidraw/excalidraw').then(mod => mod.Excalidraw),
-  { ssr: false }
-);
+// const Excalidraw = dynamic(
+//   () => import('@excalidraw/excalidraw').then(mod => mod.Excalidraw),
+//   { ssr: false }
+// );
 
 export default function MeetingScheduler() {
   const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings);
@@ -110,7 +100,7 @@ export default function MeetingScheduler() {
   });
   const [newAttendee, setNewAttendee] = useState('');
   const [editAttendee, setEditAttendee] = useState('');
-  const excalidrawRef = useRef<{ getSceneElements: () => unknown } | null>(null);
+  // const excalidrawRef = useRef<{ getSceneElements: () => unknown } | null>(null);
 
   useEffect(() => {
     // Load meetings from Firestore
@@ -241,16 +231,16 @@ export default function MeetingScheduler() {
   };
 
   // Save by projectId
-  const saveToProject = async (projectId: string) => {
-    if (excalidrawRef.current) {
-      const data = excalidrawRef.current.getSceneElements();
-      await addDoc(collection(db, 'whiteboards'), {
-        projectId,
-        data,
-        createdAt: Timestamp.now()
-      });
-    }
-  };
+  // const saveToProject = async (projectId: string) => {
+  //   if (excalidrawRef.current) {
+  //     const data = excalidrawRef.current.getSceneElements();
+  //     await addDoc(collection(db, 'whiteboards'), {
+  //       projectId,
+  //       data,
+  //       createdAt: Timestamp.now()
+  //     });
+  //   }
+  // };
 
   return (
     <div className="space-y-6">

@@ -1,34 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
 import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Grid, 
-  List, 
-  Download, 
-  Share2, 
   Star, 
-  MoreVertical, 
-  FileText, 
-  Image, 
-  Video, 
-  Music, 
-  Archive, 
-  Clock, 
-  User, 
-  Tag, 
-  Filter as FilterIcon,
-  Eye,
-  Trash2,
-  BookOpen,
-  Loader2
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Search
 } from 'lucide-react';
-import { collection, addDoc, deleteDoc, doc, onSnapshot, Timestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase';
 
 interface LibraryItem {
   id: string;
@@ -41,649 +20,476 @@ interface LibraryItem {
   fileName: string;
   fileSize: number;
   uploadedBy: string;
-  uploadedAt: Timestamp;
+  uploadedAt: string;
   downloads: number;
   rating: number;
   isPublic: boolean;
+  isFavorite: boolean;
 }
 
 const categories = [
+  'All Categories',
   'Computer Science',
   'Mathematics',
   'Physics',
   'Chemistry',
-  'Engineering',
   'Literature',
   'History',
   'Other'
 ];
 
 const fileTypes = [
-  { value: 'document', label: 'Document', icon: FileText, color: 'text-blue-500' },
-  { value: 'video', label: 'Video', icon: Video, color: 'text-red-500' },
-  { value: 'image', label: 'Image', icon: Image, color: 'text-green-500' },
-  { value: 'audio', label: 'Audio', icon: Music, color: 'text-purple-500' },
-  { value: 'presentation', label: 'Presentation', icon: FileText, color: 'text-orange-500' }
+  'All Types',
+  'Document',
+  'Video',
+  'Image',
+  'Audio',
+  'Presentation'
+];
+
+const sortOptions = [
+  'Recently Added',
+  'Name A-Z',
+  'Name Z-A',
+  'Most Downloaded',
+  'Highest Rated'
+];
+
+const initialLibraryItems: LibraryItem[] = [
+  {
+    id: '1',
+    title: 'Advanced Physics Notes',
+    description: '',
+    type: 'document',
+    category: 'Physics',
+    tags: [],
+    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBogmfqvCQF2wZuS8KzeVNTBmqRG3C5Y1bUJUytc8on-MXXhJxK8JEohONW2tEIsNIS4LX2WIMBmCLbh7nDLYlNe1EZfYwlMH59pRah72fiiCSvTSnxAiPczltcrJZtrD1mAu_-aEkdsfzQEfJPbkpuQq-enycejkyDKDhE-8fmETJJAefZrxUnjQYaKXOEu_DZ8nHjcP6PJ0J8VX3QBBR9ZsWKBmA4hya67VpDFKLjyFwGnN8mfn2zBCqrT7T9znTUOh8LY95NjYU',
+    fileName: 'Advanced Physics Notes',
+    fileSize: 2.3 * 1024 * 1024,
+    uploadedBy: 'Prof. Sharma',
+    uploadedAt: '2024-04-01',
+    downloads: 45,
+    rating: 4.5,
+    isPublic: true,
+    isFavorite: true
+  },
+  {
+    id: '2',
+    title: 'Quantum Mechanics',
+    description: '',
+    type: 'document',
+    category: 'Physics',
+    tags: [],
+    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmu6u25b5uSe244JVnbuS8bq-xPvg789AQ0xB9V5x3h5vm55N-lxzWAp7rBijg4QeAz1On93uwyS65LOaSPrhq3YIuRfpKc4oMOFB91F1OOM4lk0DpGlpJhuCrPEzvBckCsVaPY1ljwAU9TU7YoRHL1YlXAb9DMmBHIQRkIB88n3E2YElqoAV6KzyisRXWcdHlLHdn16cieQSJrByKZZSlOgV5cLp7UkexsMOpFaVL2p6sAGAx9GnfuOjkvS6B9jtC6oVUi6-6oho',
+    fileName: 'Quantum Mechanics',
+    fileSize: 1.8 * 1024 * 1024,
+    uploadedBy: 'Dr. Patel',
+    uploadedAt: '2024-03-31',
+    downloads: 32,
+    rating: 4.2,
+    isPublic: true,
+    isFavorite: false
+  },
+  {
+    id: '3',
+    title: 'Thermodynamics',
+    description: '',
+    type: 'document',
+    category: 'Physics',
+    tags: [],
+    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuADwXPIsp61oE-oRMicIqLl_kHOP2bun2BsDTkeAyueCsOOoR8RbrZqmSLHI5tEy41VKv6wXqBQpZGpB1iz_UIu1nborxIut9bC5IZ25l6IgCD5-9aT8SOlojF3IGKlsPVIiNaSsVoF1IPWJS-b9p7wiNiQhRApOYGMa2ai1n1qvShf-zQkjXZ3x5wc4FrwAKygNLErLHdT6FFg-kGD0VHeFLi8kTdh2EP8ESNmc3p8kxLMO7ETUlVf9XaY4W6MLj6Z6Ffp82WksQY',
+    fileName: 'Thermodynamics',
+    fileSize: 3.1 * 1024 * 1024,
+    uploadedBy: 'Prof. Kumar',
+    uploadedAt: '2024-03-29',
+    downloads: 28,
+    rating: 4.0,
+    isPublic: true,
+    isFavorite: true
+  },
+  {
+    id: '4',
+    title: 'Electromagnetism',
+    description: '',
+    type: 'document',
+    category: 'Physics',
+    tags: [],
+    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA2nJaVrnFkl2cMA8eC5rKHjK8xMIk3PR20HO2Az1Hw3KCcJiKaZz3wxHT3ccze8AAmc4vUj7nwHxOkotbPw2Wcxeu9Vky8vY9K41rwOYzGFIpeaiJo_EkdsMJnOJs1Ts1NcjPyC-02QsagqOPrsU-mMSrx2kPVt_oV6S18cvcr5umR1LDDkpYKE8QWTgmwhpomlyGkEF3f7Iq5NuDArg9anjOMsyhLY0dvkswWg7ck7mgZjY2xi1_OhOD-pyEBVCMZ2o11sODrCU8',
+    fileName: 'Electromagnetism',
+    fileSize: 4.2 * 1024 * 1024,
+    uploadedBy: 'Dr. Singh',
+    uploadedAt: '2024-03-22',
+    downloads: 56,
+    rating: 4.7,
+    isPublic: true,
+    isFavorite: false
+  },
+  {
+    id: '5',
+    title: 'Introduction to Algorithms',
+    description: '',
+    type: 'document',
+    category: 'Computer Science',
+    tags: [],
+    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBdKjYw7PiWmaowVBnlXb0tPy9FhKyIaWOwFs2TXz8eZuifotWjraeXeo-SzZkHYnQkfkC_6sKWsXcPdJvqp0cuWcYKci9j4nP_KgeRgwQcdHnVovo8siDe_WTl3dFbFyD2QW68VdY0mLj3pgzHdbBsnkfTa1jYGnRvTxy0Ri80n6nu2UMplERjleoX7Bb6os9RLHyor_1kY6Surh7zWwVU7NMvY2bekU4G-0-Kd-yPjh3bLx_G_MCJryfbZk45Htk-TYU3TX_oTE0',
+    fileName: 'Introduction to Algorithms',
+    fileSize: 5.6 * 1024 * 1024,
+    uploadedBy: 'Prof. Gupta',
+    uploadedAt: '2024-03-15',
+    downloads: 89,
+    rating: 4.8,
+    isPublic: true,
+    isFavorite: true
+  },
+  {
+    id: '6',
+    title: 'Calculus I Notes',
+    description: '',
+    type: 'document',
+    category: 'Mathematics',
+    tags: [],
+    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnxHyi-c3KH73eNIjRHeRYIoX1LbfQ3B8YwymTUK6FtbHBXAVjb9MywY774eWZ1CZs4BpKzbXl2iPbkbB53tGrOh3pCDKksDDgDY83AZTMgNqaRYX_e1gO7fGRCYas8k7DiUnFtsXKfryFMESij9OOVcTbPW7vYkzzM761Ld7Zn029nq_nNFn27psD0y_xKl1t974BrYMaFNBwz_OzMi-1bgmNXouaHafXH6Z-SbxsXlBcIS0kbqwI9rxaKYa2GnD2QHkpFjedtSo',
+    fileName: 'Calculus I Notes',
+    fileSize: 2.8 * 1024 * 1024,
+    uploadedBy: 'Dr. Verma',
+    uploadedAt: '2024-03-08',
+    downloads: 67,
+    rating: 4.3,
+    isPublic: true,
+    isFavorite: false
+  },
+  {
+    id: '7',
+    title: "Shakespeare's Sonnets",
+    description: '',
+    type: 'document',
+    category: 'Literature',
+    tags: [],
+    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCa_QZRhT5S3KUZUPYPJjx5KOtWO-SJJ4H3FXC3t01Gbuk5aL7v3ciaw-5z7XmCvAYP5HSwuxS1hV1TM0QBOn0BmxthJDXe5xMiupE1YyFWAI5d6owsCEM-dI7gKFlXasuoieHkQ7ouzXuzJYSQyYsil0BZ2CxF6KUeZTVWuPdlzsQZU3G_xVygpbP0AnpGE635zUARKlbz4elx_UVZ_m_S6E874pFd53iZp8TUYXsJaSE4EJLxF4YalYfb6xWpZDZwO3m1c40WQxk',
+    fileName: "Shakespeare's Sonnets",
+    fileSize: 1.5 * 1024 * 1024,
+    uploadedBy: 'Prof. Johnson',
+    uploadedAt: '2024-02-15',
+    downloads: 34,
+    rating: 4.1,
+    isPublic: true,
+    isFavorite: true
+  },
+  {
+    id: '8',
+    title: 'Linear Algebra',
+    description: '',
+    type: 'document',
+    category: 'Mathematics',
+    tags: [],
+    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAoSlQ3b2lU3UbGzKlWnJPUFC2RjprILzJ5IZogg8NRiqsP36RReM7Zw209gHZQ4pgsU3SKf2OxadGYRUK13Y3n8qP-djk3UEQT_rdaiq4SiTjiLsRRxd4E1j-NOgeyge5Lh0VTO8XFEmBZWJ0bdyBihHNf1Ps8WEXlMcel8dse3p42gx_wm1YlDlB7ttjSq8NVygRW_l_7-QQ2q9SWvqPLcwHd3Sh3lGozlWUOGrgoRlGRZvkkeLXG4byBIQoeNi2Hi9VYyUYj8z4',
+    fileName: 'Linear Algebra',
+    fileSize: 3.9 * 1024 * 1024,
+    uploadedBy: 'Dr. Kumar',
+    uploadedAt: '2024-02-10',
+    downloads: 78,
+    rating: 4.6,
+    isPublic: true,
+    isFavorite: false
+  },
+  {
+    id: '9',
+    title: 'Organic Chemistry',
+    description: '',
+    type: 'document',
+    category: 'Chemistry',
+    tags: [],
+    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC1PmXxR2BzTUeG2Uf6HG7tFxeHJ3gunSf1OOfi-0rbVIn_374EzXIofPzraPlCmOawiogenw_vawjdXkk4FrNvg2qNPSyglYkjeu0CppXc4-V9zfDmcY59U6DsKfWMA34FTo5wnL1zryOy7Vi6_QdUvjWvDEjIIYqKvJzqtdbdA_6j45D4LkVlnVr9Sr8WLdGwmBrcZRxWRU4NEOMT4QWPeoB9yYp3u4yK-eysAstKzRNDdGARYcCw_alEyVZoyMOXzm1mDAGzVDk',
+    fileName: 'Organic Chemistry',
+    fileSize: 4.7 * 1024 * 1024,
+    uploadedBy: 'Prof. Singh',
+    uploadedAt: '2024-01-15',
+    downloads: 92,
+    rating: 4.4,
+    isPublic: true,
+    isFavorite: true
+  },
+  {
+    id: '10',
+    title: 'World History',
+    description: '',
+    type: 'document',
+    category: 'History',
+    tags: [],
+    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDAbct-7hy4p8uxEKjRZW7yIC6EyvV-kQvkplShH2TAriKfrwpxkD-B_XxqPW16MMANlN-M48iw2I6vXasqoAkaYM9nQ0T69xmn_g7nZgtkb8pIVYSr3PPCE4XhPqQCs31sNCwcogEnGLAEdcXBHLr21fguTLW9EHvdV-aiUZ94ORBFoJtkOkOb2vhijcRJlQMmRL2DfhVDYBMvbS8td8ytBN9KulD_VIsPhG9CqAEUEEO0upjSM1OcaDCOErl-6B4gI2HSqjLDGrY',
+    fileName: 'World History',
+    fileSize: 6.1 * 1024 * 1024,
+    uploadedBy: 'Prof. Brown',
+    uploadedAt: '2024-01-10',
+    downloads: 45,
+    rating: 4.0,
+    isPublic: true,
+    isFavorite: false
+  }
 ];
 
 const Library: React.FC = () => {
-  const [items, setItems] = useState<LibraryItem[]>([]);
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [items, setItems] = useState<LibraryItem[]>(initialLibraryItems);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedType, setSelectedType] = useState('all');
-  const [selectedTag, setSelectedTag] = useState('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [uploading, setUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [newItem, setNewItem] = useState({
-    title: '',
-    description: '',
-    type: 'document' as LibraryItem['type'],
-    category: 'Computer Science',
-    tags: [] as string[],
-    isPublic: true
-  });
-  const [newTag, setNewTag] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'library'), (snapshot) => {
-      const libraryItems = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      })) as LibraryItem[];
-      setItems(libraryItems);
-    });
-
-    // Check for dark mode preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDarkMode(prefersDark);
-
-    return () => unsubscribe();
-  }, []);
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 100 * 1024 * 1024) { // 100MB limit
-        setError('File size exceeds 100MB limit');
-        return;
-      }
-      setSelectedFile(file);
-      const extension = file.name.split('.').pop()?.toLowerCase();
-      if (['pdf', 'doc', 'docx', 'txt'].includes(extension || '')) {
-        setNewItem(prev => ({ ...prev, type: 'document' }));
-      } else if (['mp4', 'avi', 'mov', 'mkv'].includes(extension || '')) {
-        setNewItem(prev => ({ ...prev, type: 'video' }));
-      } else if (['jpg', 'jpeg', 'png', 'gif'].includes(extension || '')) {
-        setNewItem(prev => ({ ...prev, type: 'image' }));
-      } else if (['mp3', 'wav', 'flac'].includes(extension || '')) {
-        setNewItem(prev => ({ ...prev, type: 'audio' }));
-      } else if (['ppt', 'pptx'].includes(extension || '')) {
-        setNewItem(prev => ({ ...prev, type: 'presentation' }));
-      }
-      setError(null);
-    }
-  };
-
-  const uploadFile = async () => {
-    if (!selectedFile || !newItem.title.trim()) {
-      setError('Please provide a title and select a file');
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const storageRef = ref(storage, `library/${Date.now()}_${selectedFile.name}`);
-      const snapshot = await uploadBytes(storageRef, selectedFile);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      const libraryItem: Omit<LibraryItem, 'id'> = {
-        title: newItem.title,
-        description: newItem.description,
-        type: newItem.type,
-        category: newItem.category,
-        tags: newItem.tags,
-        fileUrl: downloadURL,
-        fileName: selectedFile.name,
-        fileSize: selectedFile.size,
-        uploadedBy: 'current-user@iitcohort.com',
-        uploadedAt: Timestamp.now(),
-        downloads: 0,
-        rating: 0,
-        isPublic: newItem.isPublic
-      };
-
-      await addDoc(collection(db, 'library'), libraryItem);
-      
-      setNewItem({
-        title: '',
-        description: '',
-        type: 'document',
-        category: 'Computer Science',
-        tags: [],
-        isPublic: true
-      });
-      setSelectedFile(null);
-      setShowUploadModal(false);
-      setError(null);
-    } catch (error) {
-      setError('Failed to upload file. Please try again.');
-      console.error('Error uploading file:', error);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'library', id));
-      setDeleteConfirm(null);
-    } catch (error) {
-      setError('Failed to delete file. Please try again.');
-      console.error('Error deleting file:', error);
-    }
-  };
-
-  const addTag = () => {
-    if (newTag.trim() && !newItem.tags.includes(newTag)) {
-      setNewItem(prev => ({
-        ...prev,
-        tags: [...prev.tags, newTag]
-      }));
-      setNewTag('');
-    }
-  };
-
-  const removeTag = (tag: string) => {
-    setNewItem(prev => ({
-      ...prev,
-      tags: prev.tags.filter(t => t !== tag)
-    }));
-  };
-
-  const allTags = Array.from(new Set(items.flatMap(item => item.tags)));
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [selectedFileType, setSelectedFileType] = useState('All Types');
+  const [selectedSort, setSelectedSort] = useState('Recently Added');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showFileTypeDropdown, setShowFileTypeDropdown] = useState(false);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const itemsPerPage = 8;
 
   const filteredItems = items.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchesType = selectedType === 'all' || item.type === selectedType;
-    const matchesTag = selectedTag === 'all' || item.tags.includes(selectedTag);
-    
-    return matchesSearch && matchesCategory && matchesType && matchesTag;
+                         item.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'All Categories' || item.category === selectedCategory;
+    const matchesFileType = selectedFileType === 'All Types' || item.type === selectedFileType.toLowerCase();
+    return matchesSearch && matchesCategory && matchesFileType;
   });
 
-  const getFileIcon = (type: LibraryItem['type']) => {
-    const fileType = fileTypes.find(ft => ft.value === type);
-    return fileType ? fileType.icon : FileText;
-  };
+  const sortedItems = [...filteredItems].sort((a, b) => {
+    switch (selectedSort) {
+      case 'Name A-Z':
+        return a.title.localeCompare(b.title);
+      case 'Name Z-A':
+        return b.title.localeCompare(a.title);
+      case 'Most Downloaded':
+        return b.downloads - a.downloads;
+      case 'Highest Rated':
+        return b.rating - a.rating;
+      default:
+        return 0; // Recently Added - keep original order
+    }
+  });
 
-  const getFileColor = (type: LibraryItem['type']) => {
-    const fileType = fileTypes.find(ft => ft.value === type);
-    return fileType ? fileType.color : 'text-gray-500';
-  };
+  const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = sortedItems.slice(startIndex, endIndex);
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  const recentlyUploaded = items.slice(0, 4); // First 4 items as recently uploaded
 
-  const canPreview = (item: LibraryItem) => {
-    return ['image', 'video'].includes(item.type);
+  const toggleFavorite = (id: string) => {
+    setItems(prev => prev.map(item => 
+      item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
+    ));
   };
 
   return (
-    <div className={`container mx-auto p-6 space-y-6 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-      {/* Error Toast */}
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            className="fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50"
-          >
-            {error}
-            <button
-              onClick={() => setError(null)}
-              className="ml-2 text-white hover:text-gray-200"
-            >
-              ×
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold">Resource Library</h2>
-          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Discover and share educational resources
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}
-          >
-            {isDarkMode ? '☀️' : '🌙'}
-          </button>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Upload Resource
-          </button>
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className={`p-6 rounded-xl shadow-sm border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} w-5 h-5`} />
-              <input
-                type="text"
-                placeholder="Search resources..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-              />
+    <div className="relative flex size-full min-h-screen flex-col bg-white group/design-root overflow-x-hidden" style={{fontFamily: '"Public Sans", "Noto Sans", sans-serif'}}>
+      <div className="layout-container flex h-full grow flex-col">
+        <div className="gap-1 px-6 flex flex-1 justify-center py-5">
+          <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
+            {/* Header */}
+            <div className="flex flex-wrap justify-between gap-3 p-4">
+              <div className="flex min-w-72 flex-col gap-3">
+                <h1 className="text-[#121417] tracking-light text-[32px] font-bold leading-tight">Library</h1>
+                <p className="text-[#677183] text-sm font-normal leading-normal">Explore and manage your academic resources</p>
+              </div>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className={`border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-            >
-              <option value="all">All Categories</option>
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className={`border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-            >
-              <option value="all">All Types</option>
-              {fileTypes.map(type => (
-                <option key={type.value} value={type.value}>{type.label}</option>
-              ))}
-            </select>
-            <select
-              value={selectedTag}
-              onChange={(e) => setSelectedTag(e.target.value)}
-              className={`border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-            >
-              <option value="all">All Tags</option>
-              {allTags.map(tag => (
-                <option key={tag} value={tag}>{tag}</option>
-              ))}
-            </select>
-            <button
-              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              className={`border rounded-lg px-3 py-2 hover:bg-opacity-10 transition-all ${isDarkMode ? 'border-gray-600 hover:bg-gray-600' : 'border-gray-300 hover:bg-gray-100'}`}
-            >
-              {viewMode === 'grid' ? <List className="w-5 h-5" /> : <Grid className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Files Grid/List */}
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredItems.map((item) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`p-5 rounded-xl shadow-sm border hover:shadow-lg transition-all duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-lg ${getFileColor(item.type).replace('text-', 'bg-').replace('-500', '-100')}`}>
-                  {React.createElement(getFileIcon(item.type), { className: `w-6 h-6 ${getFileColor(item.type)}` })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 text-yellow-400" />
-                  <span className="text-sm">{item.rating.toFixed(1)}</span>
-                </div>
-              </div>
-              
-              <h3 className="font-semibold text-lg mb-2 truncate">{item.title}</h3>
-              <p className={`text-sm mb-3 line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                {item.description}
-              </p>
-              
-              <div className={`flex items-center gap-2 text-xs mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                <Clock className="w-4 h-4" />
-                {item.uploadedAt.toDate().toLocaleDateString()}
-              </div>
-              
-              <div className={`flex items-center gap-2 text-xs mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                <Download className="w-4 h-4" />
-                {item.downloads} downloads
-              </div>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
-                {item.tags.slice(0, 2).map((tag, index) => (
-                  <span key={index} className={`px-2 py-1 rounded-full text-xs ${isDarkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
-                    {tag}
-                  </span>
-                ))}
-                {item.tags.length > 2 && (
-                  <span className={`px-2 py-1 rounded-full text-xs ${isDarkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
-                    +{item.tags.length - 2}
-                  </span>
-                )}
-              </div>
-              
-              <div className="flex items-center justify-between gap-2">
-                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {formatFileSize(item.fileSize)}
-                </span>
-                <div className="flex gap-2">
-                  {canPreview(item) && (
-                    <a
-                      href={item.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </a>
-                  )}
-                  <a
-                    href={item.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
-                  >
-                    Download
-                  </a>
-                  <button
-                    onClick={() => setDeleteConfirm(item.id)}
-                    className="text-red-500 hover:text-red-700 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {deleteConfirm === item.id && (
-                <div className="mt-4 p-3 bg-red-50 rounded-lg">
-                  <p className="text-sm text-red-700 mb-2">Confirm delete?</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(null)}
-                      className="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-300"
-                    >
-                      Cancel
-                    </button>
+            {/* Search Bar */}
+            <div className="px-4 py-3">
+              <label className="flex flex-col min-w-40 h-12 w-full">
+                <div className="flex w-full flex-1 items-stretch rounded-xl h-full">
+                  <div className="text-[#677183] flex border-none bg-[#f1f2f4] items-center justify-center pl-4 rounded-l-xl border-r-0">
+                    <Search className="w-6 h-6" />
                   </div>
-                </div>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredItems.map((item) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`p-5 rounded-xl shadow-sm border hover:shadow-lg transition-all duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-lg ${getFileColor(item.type).replace('text-', 'bg-').replace('-500', '-100')}`}>
-                  {React.createElement(getFileIcon(item.type), { className: `w-6 h-6 ${getFileColor(item.type)}` })}
-                </div>
-                
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{item.title}</h3>
-                  <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {item.description}
-                  </p>
-                  <div className={`flex flex-wrap items-center gap-4 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <span>{item.category}</span>
-                    <span>{formatFileSize(item.fileSize)}</span>
-                    <span>{item.downloads} downloads</span>
-                    <span>{item.uploadedAt.toDate().toLocaleDateString()}</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-400" />
-                    <span className="text-sm">{item.rating.toFixed(1)}</span>
-                  </div>
-                  {canPreview(item) && (
-                    <a
-                      href={item.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </a>
-                  )}
-                  <a
-                    href={item.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                    onClick={() => {
-                      // Increment download count (mock)
-                      setItems(prev => prev.map(i => i.id === item.id ? { ...i, downloads: i.downloads + 1 } : i));
-                    }}
-                  >
-                    Download
-                  </a>
-                  <button
-                    onClick={() => setDeleteConfirm(item.id)}
-                    className="text-red-500 hover:text-red-700 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {deleteConfirm === item.id && (
-                <div className="mt-4 p-3 bg-red-50 rounded-lg">
-                  <p className="text-sm text-red-700 mb-2">Confirm delete?</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(null)}
-                      className="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-300"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {filteredItems.length === 0 && (
-        <div className="text-center py-12">
-          <BookOpen className={`w-16 h-16 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} />
-          <h3 className="text-xl НАТО font-medium mb-2">No resources found</h3>
-          <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Start by uploading your first resource
-          </p>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-all"
-          >
-            Upload Resource
-          </button>
-        </div>
-      )}
-
-      {/* Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className={`rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}
-          >
-            <h3 className="text-xl font-semibold mb-6">Upload Resource</h3>
-            
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium mb-1">File</label>
-                <input
-                  type="file"
-                  onChange={handleFileSelect}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                  accept=".pdf,.doc,.docx,.txt,.mp4,.avi,.mov,.mkv,.jpg,.jpeg,.png,.gif,.mp3,.wav,.flac,.ppt,.pptx"
-                />
-                {selectedFile && (
-                  <p className={`text-sm mt-1 truncate ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {selectedFile.name}
-                  </p>
-                )}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Title</label>
-                <input
-                  type="text"
-                  value={newItem.title}
-                  onChange={(e) => setNewItem({...newItem, title: e.target.value})}
-                  className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-                  placeholder="Resource title"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea
-                  value={newItem.description}
-                  onChange={(e) => setNewItem({...newItem, description: e.target.value})}
-                  className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-                  rows={4}
-                  placeholder="Resource description"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Category</label>
-                <select
-                  value={newItem.category}
-                  onChange={(e) => setNewItem({...newItem, category: e.target.value})}
-                  className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-                >
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Tags</label>
-                <div className="flex gap-2 mb-3">
                   <input
-                    type="text"
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    className={`flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-                    placeholder="Add tag"
-                    onKeyPress={(e) => e.key === 'Enter' && addTag()}
+                    placeholder="Search for resources"
+                    className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#121417] focus:outline-0 focus:ring-0 border-none bg-[#f1f2f4] focus:border-none h-full placeholder:text-[#677183] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                  <button
-                    onClick={addTag}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all"
-                  >
-                    Add
-                  </button>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {newItem.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
-                    >
-                      {tag}
+              </label>
+            </div>
+
+            {/* Filters */}
+            <div className="flex gap-3 p-3 flex-wrap pr-4">
+              {/* Categories Dropdown */}
+              <div className="relative">
+                <button 
+                  className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#f1f2f4] pl-4 pr-2"
+                  onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                >
+                  <p className="text-[#121417] text-sm font-medium leading-normal">Categories</p>
+                  <ChevronDown className="w-5 h-5 text-[#121417]" />
+                </button>
+                {showCategoryDropdown && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-48">
+                    {categories.map((category) => (
                       <button
-                        onClick={() => removeTag(tag)}
-                        className="text-blue-600 hover:text-blue-800"
+                        key={category}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
+                        onClick={() => {
+                          setSelectedCategory(category);
+                          setShowCategoryDropdown(false);
+                        }}
                       >
-                        ×
+                        {category}
                       </button>
-                    </span>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* File Types Dropdown */}
+              <div className="relative">
+                <button 
+                  className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#f1f2f4] pl-4 pr-2"
+                  onClick={() => setShowFileTypeDropdown(!showFileTypeDropdown)}
+                >
+                  <p className="text-[#121417] text-sm font-medium leading-normal">File Types</p>
+                  <ChevronDown className="w-5 h-5 text-[#121417]" />
+                </button>
+                {showFileTypeDropdown && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-48">
+                    {fileTypes.map((type) => (
+                      <button
+                        key={type}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
+                        onClick={() => {
+                          setSelectedFileType(type);
+                          setShowFileTypeDropdown(false);
+                        }}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Sort Dropdown */}
+              <div className="relative">
+                <button 
+                  className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-[#f1f2f4] pl-4 pr-2"
+                  onClick={() => setShowSortDropdown(!showSortDropdown)}
+                >
+                  <p className="text-[#121417] text-sm font-medium leading-normal">Sort</p>
+                  <ChevronDown className="w-5 h-5 text-[#121417]" />
+                </button>
+                {showSortDropdown && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-48">
+                    {sortOptions.map((option) => (
+                      <button
+                        key={option}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
+                        onClick={() => {
+                          setSelectedSort(option);
+                          setShowSortDropdown(false);
+                        }}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recently Uploaded */}
+            <h2 className="text-[#121417] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Recently Uploaded</h2>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4">
+              {recentlyUploaded.map((item) => (
+                <div key={item.id} className="flex flex-col gap-3 pb-3">
+                  <div
+                    className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                    style={{ backgroundImage: `url(${item.fileUrl})` }}
+                    onClick={() => console.log('View item:', item.title)}
+                  />
+                  <div>
+                    <p className="text-[#121417] text-base font-medium leading-normal">{item.title}</p>
+                    <p className="text-[#677183] text-sm font-normal leading-normal">{item.category}</p>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            {/* Resources */}
+            <h2 className="text-[#121417] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Resources</h2>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4">
+              {currentItems.map((item) => (
+                <div key={item.id} className="flex flex-col gap-3 pb-3">
+                  <div
+                    className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity relative"
+                    style={{ backgroundImage: `url(${item.fileUrl})` }}
+                    onClick={() => console.log('View item:', item.title)}
+                  >
+                    <button
+                      className="absolute top-2 right-2 p-1 bg-white/80 rounded-full hover:bg-white transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(item.id);
+                      }}
+                    >
+                      <Star className={`w-4 h-4 ${item.isFavorite ? 'text-yellow-500 fill-current' : 'text-gray-400'}`} />
+                    </button>
+                  </div>
+                  <div>
+                    <p className="text-[#121417] text-base font-medium leading-normal">{item.title}</p>
+                    <p className="text-[#677183] text-sm font-normal leading-normal">{item.category}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center p-4">
+                <button 
+                  className="flex size-10 items-center justify-center disabled:opacity-50"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-[18px] h-[18px] text-[#121417]" />
+                </button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    className={`text-sm font-bold leading-normal tracking-[0.015em] flex size-10 items-center justify-center rounded-full ${
+                      currentPage === page 
+                        ? 'text-[#121417] bg-[#f1f2f4]' 
+                        : 'text-[#121417]'
+                    }`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                ))}
+                
+                <button 
+                  className="flex size-10 items-center justify-center disabled:opacity-50"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="w-[18px] h-[18px] text-[#121417]" />
+                </button>
               </div>
-              
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isPublic"
-                  checked={newItem.isPublic}
-                  onChange={(e) => setNewItem({...newItem, isPublic: e.target.checked})}
-                  className="rounded text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="isPublic" className="text-sm">
-                  Make this resource public
-                </label>
+            )}
+
+            {/* Summary */}
+            <h2 className="text-[#121417] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Summary</h2>
+            <div className="flex flex-wrap gap-4 p-4">
+              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#dddfe4]">
+                <p className="text-[#121417] text-base font-medium leading-normal">Total Files</p>
+                <p className="text-[#121417] tracking-light text-2xl font-bold leading-tight">{items.length}</p>
+              </div>
+              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#dddfe4]">
+                <p className="text-[#121417] text-base font-medium leading-normal">Storage Used</p>
+                <p className="text-[#121417] tracking-light text-2xl font-bold leading-tight">12 GB / 50 GB</p>
+              </div>
+              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#dddfe4]">
+                <p className="text-[#121417] text-base font-medium leading-normal">Most Popular Tags</p>
+                <p className="text-[#121417] tracking-light text-2xl font-bold leading-tight">Computer Science, Math, Literature</p>
               </div>
             </div>
-            
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={uploadFile}
-                disabled={uploading || !selectedFile || !newItem.title.trim()}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
-                {uploading ? 'Uploading...' : 'Upload'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowUploadModal(false);
-                  setError(null);
-                }}
-                className={`flex-1 py-2 px-4 rounded-lg transition-all ${isDarkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
