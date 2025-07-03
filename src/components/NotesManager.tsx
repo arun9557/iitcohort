@@ -93,7 +93,31 @@ const dummyNotes = [
   },
 ];
 
-function MasonryGrid({ notes, onEdit, onArchive, onDelete, onRestore, onPin, onReminder }) {
+type Note = {
+  id: number;
+  title: string;
+  body: string;
+  pinned: boolean;
+  label: string;
+  date: string;
+  color: string;
+  checklist: { text: string; checked: boolean }[] | null;
+  archived: boolean;
+  trashed: boolean;
+  reminder: string | null;
+};
+
+interface MasonryGridProps {
+  notes: Note[];
+  onEdit: (note: Note) => void;
+  onArchive: (note: Note) => void;
+  onDelete: (note: Note) => void;
+  onRestore: (note: Note) => void;
+  onPin: (note: Note) => void;
+  onReminder: (note: Note) => void;
+}
+
+function MasonryGrid({ notes, onEdit, onArchive, onDelete, onRestore, onPin, onReminder }: MasonryGridProps) {
   return (
     <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 w-full">
       {notes.map((note) => (
@@ -319,122 +343,4 @@ export default function NotesManager() {
                 ))}
               </select>
               {/* Color preview dot */}
-              <span className={`inline-block w-4 h-4 rounded-full ml-2 align-middle ${editNote.color}`}></span>
-              <input
-                className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900"
-                value={editNote.label}
-                onChange={(e) => setEditNote({ ...editNote, label: e.target.value })}
-                placeholder="Label"
-              />
-              <button
-                className={`p-2 rounded ${editNote.pinned ? 'bg-yellow-400 text-gray-900' : 'bg-gray-200 text-yellow-600'}`}
-                onClick={() => setEditNote({ ...editNote, pinned: !editNote.pinned })}
-                title="Pin note"
-              >
-                <FaThumbtack />
-              </button>
-              <button
-                className={`p-2 rounded ${editNote.archived ? 'bg-blue-200 text-blue-900' : 'bg-gray-200 text-blue-600'}`}
-                onClick={() => setEditNote({ ...editNote, archived: !editNote.archived })}
-                title="Archive"
-              >
-                <FaArchive />
-              </button>
-              <button
-                className={`p-2 rounded ${editNote.trashed ? 'bg-red-200 text-red-900' : 'bg-gray-200 text-red-600'}`}
-                onClick={() => setEditNote({ ...editNote, trashed: !editNote.trashed })}
-                title="Trash"
-              >
-                <FaTrash />
-              </button>
-              <button
-                className={`p-2 rounded ${editNote.reminder ? 'bg-purple-200 text-purple-900' : 'bg-gray-200 text-purple-600'}`}
-                onClick={() => handleReminder(editNote)}
-                title="Set Reminder"
-              >
-                <FaBell />
-              </button>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="px-4 py-2 rounded bg-gray-200 text-gray-700" onClick={() => setEditNote(null)}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-yellow-400 text-gray-900 font-bold" onClick={() => handleSaveEdit(editNote)}>Save</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* New Note Modal */}
-      {showNew && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-200">
-            <input
-              className="w-full bg-transparent border-b border-gray-300 text-gray-900 text-lg font-bold mb-2 outline-none"
-              value={newNote.title}
-              onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
-              placeholder="Title"
-            />
-            <textarea
-              className="w-full bg-transparent border-b border-gray-300 text-gray-800 mb-2 outline-none min-h-[60px]"
-              value={newNote.body}
-              onChange={(e) => setNewNote({ ...newNote, body: e.target.value })}
-              placeholder="Take a note..."
-            />
-            <div className="flex items-center gap-2 mt-2">
-              <select
-                className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900"
-                value={newNote.color}
-                onChange={(e) => setNewNote({ ...newNote, color: e.target.value })}
-              >
-                {colorOptions.map((c) => (
-                  <option key={c.className} value={c.className}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-              {/* Color preview dot */}
-              <span className={`inline-block w-4 h-4 rounded-full ml-2 align-middle ${newNote.color}`}></span>
-              <input
-                className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900"
-                value={newNote.label}
-                onChange={(e) => setNewNote({ ...newNote, label: e.target.value })}
-                placeholder="Label"
-              />
-              <button
-                className={`p-2 rounded ${newNote.pinned ? 'bg-yellow-400 text-gray-900' : 'bg-gray-200 text-yellow-600'}`}
-                onClick={() => setNewNote({ ...newNote, pinned: !newNote.pinned })}
-                title="Pin note"
-              >
-                <FaThumbtack />
-              </button>
-              <button
-                className={`p-2 rounded ${newNote.archived ? 'bg-blue-200 text-blue-900' : 'bg-gray-200 text-blue-600'}`}
-                onClick={() => setNewNote({ ...newNote, archived: !newNote.archived })}
-                title="Archive"
-              >
-                <FaArchive />
-              </button>
-              <button
-                className={`p-2 rounded ${newNote.trashed ? 'bg-red-200 text-red-900' : 'bg-gray-200 text-red-600'}`}
-                onClick={() => setNewNote({ ...newNote, trashed: !newNote.trashed })}
-                title="Trash"
-              >
-                <FaTrash />
-              </button>
-              <button
-                className={`p-2 rounded ${newNote.reminder ? 'bg-purple-200 text-purple-900' : 'bg-gray-200 text-purple-600'}`}
-                onClick={() => handleReminder(newNote)}
-                title="Set Reminder"
-              >
-                <FaBell />
-              </button>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="px-4 py-2 rounded bg-gray-200 text-gray-700" onClick={() => setShowNew(false)}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-yellow-400 text-gray-900 font-bold" onClick={handleAddNote}>Add</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-} 
+              <span className={`
