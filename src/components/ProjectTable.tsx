@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, Timestamp } from "firebase/firestore";
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import { motion } from "framer-motion";
-import { Plus, Edit, Trash2, CheckCircle, Clock, X, Layout } from "lucide-react";
+import { Plus, Edit, Trash2, X, Layout } from "lucide-react";
 import KanbanBoard from "./KanbanBoard";
 
 interface Project {
@@ -223,7 +223,7 @@ export default function ProjectTable() {
                 className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition font-semibold flex items-center justify-center gap-2"
                 disabled={loading}
               >
-                {loading ? "Saving..." : <><CheckCircle className="w-4 h-4" /> {editProject ? "Update" : "Add"}</>}
+                {loading ? "Saving..." : <>{editProject ? "Update" : "Add"}</>}
               </button>
             </form>
           </motion.div>

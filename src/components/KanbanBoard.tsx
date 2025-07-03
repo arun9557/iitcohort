@@ -8,11 +8,9 @@ import {
   MoreVertical, 
   Calendar, 
   User, 
-  MessageSquare,
   Clock,
   CheckCircle,
-  AlertCircle,
-  X
+  AlertCircle
 } from 'lucide-react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -181,7 +179,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
   }, [tasks]);
 
   const onDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
+    const { destination, source } = result;
 
     if (!destination) return;
 
@@ -224,7 +222,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
       priority: 'medium',
       assignee: 'Unassigned',
       dueDate: new Date().toISOString().split('T')[0],
-      status: columnId as any,
+      status: columnId as 'todo' | 'in-progress' | 'review' | 'done',
       projectId: projectId || ''
     };
 
