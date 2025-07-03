@@ -4,7 +4,7 @@ import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { getDatabase } from 'firebase/database';
 
-// Firebase configuration using environment variables
+// Firebase configuration using environment variables with fallback
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAKLqd9z98nRFTbM5YtPHisPrpc1Bwcx8c",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "iitcohort-75b1d.firebaseapp.com",
