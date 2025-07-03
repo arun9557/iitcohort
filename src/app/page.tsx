@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User, createUserWithEmailAndPassword } from 'firebase/auth';
 import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { motion } from 'framer-motion';
@@ -845,9 +845,8 @@ const FuturePlanningSection = ({
   );
 };
 
-// Tab configuration moved to component usage
-
-export default function Home() {
+// Main component wrapped with Suspense to handle the workStore error
+function HomeContent() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [message, setMessage] = useState('');
@@ -1132,5 +1131,15 @@ export default function Home() {
         </main>
       </div>
     </div>
+  );
+}
+
+// Tab configuration moved to component usage
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
