@@ -500,7 +500,7 @@ const LibrarySection = ({ setActiveTab }: { setActiveTab: (tab: string) => void 
     switch (type) {
       case 'document': return <FileText className="w-4 h-4 text-blue-500" />;
       case 'video': return <Video className="w-4 h-4 text-red-500" />;
-      case 'image': return <Image className="w-4 h-4 text-green-500" alt="" />;
+      case 'image': return <Image className="w-4 h-4 text-green-500" />;
       case 'audio': return <Music className="w-4 h-4 text-purple-500" />;
       default: return <FileText className="w-4 h-4 text-gray-500" />;
     }
@@ -1131,5 +1131,3 @@ export default function Home() {
     </div>
   );
 }
-
-export { db };

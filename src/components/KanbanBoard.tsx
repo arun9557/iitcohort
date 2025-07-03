@@ -11,7 +11,6 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -23,7 +22,6 @@ import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import { 
   Plus, 
-  MoreVertical, 
   Calendar, 
   User, 
   Clock,
@@ -346,7 +344,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
                   items={column.tasks.map(task => task.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  {column.tasks.map((task, index) => (
+                  {column.tasks.map((task) => (
                     <SortableTask key={task.id} task={task} />
                   ))}
                 </SortableContext>
