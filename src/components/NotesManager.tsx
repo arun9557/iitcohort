@@ -1,563 +1,436 @@
 'use client';
 
-import { useState } from 'react';
-// import { collection, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  FileText,
-  Star,
-  Calendar,
-  Share2,
-  User,
-  Tag
-} from 'lucide-react';
-// import { db, storage } from '../firebase';
+import React, { useState } from 'react';
+import { FaSearch, FaUserCircle, FaPlus, FaBell, FaTag, FaArchive, FaTrash, FaThumbtack, FaUndo } from 'react-icons/fa';
 
-interface Note {
-  id: string;
-  title: string;
-  content: string;
-  tags: string[];
-  category: string;
-  author: string;
-  createdAt: string;
-  updatedAt: string;
-  isFavorite: boolean;
-  isShared: boolean;
-  fileUrl: string;
+const sidebarItems = [
+  { key: 'notes', label: 'Notes', icon: <FaTag /> },
+  { key: 'reminders', label: 'Reminders', icon: <FaBell /> },
+  { key: 'labels', label: 'Labels', icon: <FaTag /> },
+  { key: 'archive', label: 'Archive', icon: <FaArchive /> },
+  { key: 'trash', label: 'Trash', icon: <FaTrash /> },
+];
+
+const colorOptions = [
+  { label: 'Yellow', className: 'bg-yellow-100' },
+  { label: 'Pink', className: 'bg-pink-100' },
+  { label: 'Green', className: 'bg-green-100' },
+  { label: 'Blue', className: 'bg-blue-100' },
+  { label: 'Purple', className: 'bg-purple-100' },
+  { label: 'Red', className: 'bg-red-100' },
+  { label: 'Gray', className: 'bg-gray-100' },
+];
+
+const dummyNotes = [
+  {
+    id: 1,
+    title: 'Project Ideas',
+    body: 'Build a modern dashboard with React and Tailwind.',
+    pinned: true,
+    label: 'Work',
+    date: '2024-06-01',
+    color: 'bg-yellow-100',
+    checklist: null,
+    archived: false,
+    trashed: false,
+    reminder: null,
+  },
+  {
+    id: 2,
+    title: 'Shopping List',
+    body: '',
+    pinned: false,
+    label: 'Personal',
+    date: '2024-06-02',
+    color: 'bg-pink-100',
+    checklist: [
+      { text: 'Milk', checked: false },
+      { text: 'Eggs', checked: true },
+      { text: 'Bread', checked: false },
+    ],
+    archived: false,
+    trashed: false,
+    reminder: '2024-06-10',
+  },
+  {
+    id: 3,
+    title: 'Meeting Notes',
+    body: 'Discuss project timeline and deliverables.',
+    pinned: false,
+    label: 'Work',
+    date: '2024-06-03',
+    color: 'bg-green-100',
+    checklist: null,
+    archived: true,
+    trashed: false,
+    reminder: null,
+  },
+  {
+    id: 4,
+    title: 'Ideas',
+    body: 'Try a new color palette for the app.',
+    pinned: false,
+    label: 'Design',
+    date: '2024-06-04',
+    color: 'bg-blue-100',
+    checklist: null,
+    archived: false,
+    trashed: true,
+    reminder: null,
+  },
+  {
+    id: 5,
+    title: 'Doctor Appointment',
+    body: 'Visit Dr. Sharma at 5pm.',
+    pinned: false,
+    label: 'Health',
+    date: '2024-06-05',
+    color: 'bg-purple-100',
+    checklist: null,
+    archived: false,
+    trashed: false,
+    reminder: '2024-06-11',
+  },
+];
+
+function MasonryGrid({ notes, onEdit, onArchive, onDelete, onRestore, onPin, onReminder }) {
+  return (
+    <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 w-full">
+      {notes.map((note) => (
+        <div
+          key={note.id}
+          className={`mb-4 break-inside-avoid rounded-xl shadow p-4 cursor-pointer transition-all duration-150 ${note.color} bg-white border border-gray-200 hover:scale-[1.02] group`}
+          onClick={() => onEdit(note)}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-semibold text-lg text-gray-900">{note.title}</span>
+            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+              {!note.archived && !note.trashed && (
+                <button onClick={() => onPin(note)} title="Pin" className="text-gray-500 hover:text-yellow-600"><FaThumbtack /></button>
+              )}
+              {!note.archived && !note.trashed && (
+                <button onClick={() => onArchive(note)} title="Archive" className="text-gray-500 hover:text-blue-600"><FaArchive /></button>
+              )}
+              {!note.trashed && (
+                <button onClick={() => onDelete(note)} title="Delete" className="text-gray-500 hover:text-red-600"><FaTrash /></button>
+              )}
+              {note.trashed && (
+                <button onClick={() => onRestore(note)} title="Restore" className="text-gray-500 hover:text-green-600"><FaUndo /></button>
+              )}
+              {!note.trashed && (
+                <button onClick={() => onReminder(note)} title="Set Reminder" className="text-gray-500 hover:text-purple-600"><FaBell /></button>
+              )}
+            </div>
+          </div>
+          {note.body && <div className="mb-2 text-sm text-gray-700">{note.body}</div>}
+          {note.checklist && (
+            <ul className="mb-2">
+              {note.checklist.map((item, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  <input type="checkbox" checked={item.checked} readOnly className="accent-blue-500" />
+                  <span className={item.checked ? 'line-through text-gray-400' : 'text-gray-700'}>{item.text}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+            <span className="flex items-center gap-1"><FaTag className="inline" /> {note.label}</span>
+            <span>{new Date(note.date).toLocaleTimeString()}</span>
+          </div>
+          {note.reminder && <div className="mt-1 text-xs text-purple-600 flex items-center gap-1"><FaBell /> {new Date(note.reminder).toLocaleTimeString()}</div>}
+        </div>
+      ))}
+    </div>
+  );
 }
 
-const initialNotes: Note[] = [
-  {
-    id: '1',
-    title: 'Data Structures Notes',
-    content: `# Data Structures Overview
-
-## Arrays
-- Linear data structure
-- Contiguous memory allocation
-- O(1) access time
-- Fixed size in most languages
-
-## Linked Lists
-- Dynamic data structure
-- Non-contiguous memory
-- O(n) access time
-- Flexible size
-
-## Trees
-- Hierarchical data structure
-- Binary trees, AVL trees, Red-Black trees
-- Used for searching and sorting
-
-## Graphs
-- Network data structure
-- Vertices and edges
-- Used for modeling relationships`,
-    tags: ['Algorithms', 'Data Structures', 'Computer Science'],
-    category: 'Computer Science',
-    author: 'Alice',
-    createdAt: '2024-01-10',
-    updatedAt: '2024-01-12',
-    isFavorite: true,
-    isShared: true,
-    fileUrl: ''
-  },
-  {
-    id: '2',
-    title: 'Web Development Concepts',
-    content: `# Modern Web Development
-
-## Frontend Technologies
-- React.js for UI components
-- Next.js for full-stack applications
-- TypeScript for type safety
-- Tailwind CSS for styling
-
-## Backend Technologies
-- Node.js runtime
-- Express.js framework
-- MongoDB for NoSQL database
-- Firebase for real-time features
-
-## Best Practices
-- Component-based architecture
-- Responsive design
-- Performance optimization
-- Security considerations`,
-    tags: ['Web Development', 'React', 'Next.js', 'JavaScript'],
-    category: 'Web Development',
-    author: 'Bob',
-    createdAt: '2024-01-08',
-    updatedAt: '2024-01-11',
-    isFavorite: false,
-    isShared: false,
-    fileUrl: ''
-  },
-  {
-    id: '3',
-    title: 'Machine Learning Basics',
-    content: `# Introduction to Machine Learning
-
-## Types of ML
-1. **Supervised Learning**
-   - Classification
-   - Regression
-
-2. **Unsupervised Learning**
-   - Clustering
-   - Dimensionality reduction
-
-3. **Reinforcement Learning**
-   - Q-learning
-   - Policy gradients
-
-## Popular Algorithms
-- Linear Regression
-- Logistic Regression
-- Decision Trees
-- Random Forest
-- Support Vector Machines
-- Neural Networks`,
-    tags: ['Machine Learning', 'AI', 'Python', 'Statistics'],
-    category: 'Artificial Intelligence',
-    author: 'Charlie',
-    createdAt: '2024-01-05',
-    updatedAt: '2024-01-09',
-    isFavorite: true,
-    isShared: true,
-    fileUrl: ''
-  }
-];
-
-const categories = [
-  'Computer Science',
-  'Web Development',
-  'Artificial Intelligence',
-  'Mathematics',
-  'Physics',
-  'Chemistry',
-  'Biology',
-  'Literature',
-  'History',
-  'Other'
-];
-
 export default function NotesManager() {
-  const [notes, setNotes] = useState<Note[]>(initialNotes);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [newNote, setNewNote] = useState<Partial<Note>>({
+  const [activeSidebar, setActiveSidebar] = useState('notes');
+  const [notes, setNotes] = useState(dummyNotes);
+  const [editNote, setEditNote] = useState(null);
+  const [search, setSearch] = useState('');
+  const [showNew, setShowNew] = useState(false);
+  const [newNote, setNewNote] = useState({
     title: '',
-    content: '',
-    tags: [],
-    category: 'Computer Science'
+    body: '',
+    checklist: null,
+    color: colorOptions[0].className,
+    label: '',
+    pinned: false,
+    archived: false,
+    trashed: false,
+    reminder: null,
   });
-  // const [file, setFile] = useState<File | null>(null);
-  // const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [labelFilter, setLabelFilter] = useState(null);
 
-  const filteredNotes = notes.filter(note => {
-    const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === 'All' || note.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+  // Unique labels for Labels section
+  const uniqueLabels = Array.from(new Set(notes.filter(n => !n.trashed).map(n => n.label).filter(Boolean)));
+
+  // Filter notes by sidebar section
+  let filteredNotes = notes.filter((n) => {
+    if (activeSidebar === 'notes') return !n.archived && !n.trashed;
+    if (activeSidebar === 'reminders') return !!n.reminder && !n.trashed;
+    if (activeSidebar === 'archive') return n.archived && !n.trashed;
+    if (activeSidebar === 'trash') return n.trashed;
+    if (activeSidebar === 'labels' && labelFilter) return n.label === labelFilter && !n.trashed;
+    return false;
   });
+  if (activeSidebar !== 'labels') setTimeout(() => setLabelFilter(null), 0);
+  if (search) {
+    filteredNotes = filteredNotes.filter(
+      (n) =>
+        n.title.toLowerCase().includes(search.toLowerCase()) ||
+        n.body.toLowerCase().includes(search.toLowerCase())
+    );
+  }
 
-  const createNote = () => {
-    if (!newNote.title || !newNote.content) return;
+  function handleSaveEdit(note) {
+    setNotes((prev) => prev.map((n) => (n.id === note.id ? note : n)));
+    setEditNote(null);
+  }
 
-    const note: Note = {
-      id: Date.now().toString(),
-      title: newNote.title,
-      content: newNote.content,
-      tags: newNote.tags || [],
-      category: newNote.category || 'Computer Science',
-      author: 'Current User',
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
-      isFavorite: false,
-      isShared: false,
-      fileUrl: ''
-    };
+  function handleAddNote() {
+    setNotes((prev) => [
+      {
+        ...newNote,
+        id: Date.now(),
+        date: new Date().toISOString().slice(0, 10),
+      },
+      ...prev,
+    ]);
+    setShowNew(false);
+    setNewNote({ title: '', body: '', checklist: null, color: colorOptions[0].className, label: '', pinned: false, archived: false, trashed: false, reminder: null });
+  }
 
-    setNotes(prev => [note, ...prev]);
-    setNewNote({
-      title: '',
-      content: '',
-      tags: [],
-      category: 'Computer Science'
-    });
-    setShowCreateForm(false);
-    setSelectedNote(note);
-  };
-
-  const updateNote = () => {
-    if (!editingNote) return;
-
-    const updatedNote = {
-      ...editingNote,
-      updatedAt: new Date().toISOString().split('T')[0]
-    };
-
-    setNotes(prev => prev.map(note => 
-      note.id === editingNote.id ? updatedNote : note
-    ));
-    setSelectedNote(updatedNote);
-    setEditingNote(null);
-  };
-
-  const deleteNote = (id: string) => {
-    setNotes(prev => prev.filter(note => note.id !== id));
-    if (selectedNote?.id === id) {
-      setSelectedNote(null);
-    }
-  };
-
-  const toggleFavorite = (id: string) => {
-    setNotes(prev => prev.map(note => 
-      note.id === id ? { ...note, isFavorite: !note.isFavorite } : note
-    ));
-  };
-
-  const toggleShare = (id: string) => {
-    setNotes(prev => prev.map(note => 
-      note.id === id ? { ...note, isShared: !note.isShared } : note
-    ));
-  };
-
-  const addTag = (tag: string) => {
-    if (editingNote && !editingNote.tags.includes(tag)) {
-      setEditingNote(prev => prev ? {
-        ...prev,
-        tags: [...prev.tags, tag]
-      } : null);
-    }
-  };
-
-  const removeTag = (tag: string) => {
-    if (editingNote) {
-      setEditingNote(prev => prev ? {
-        ...prev,
-        tags: prev.tags.filter(t => t !== tag)
-      } : null);
-    }
-  };
-
-  // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   if (e.target.files && e.target.files[0]) {
-  //     setFile(e.target.files[0]);
-  //   }
-  // };
-
-  // const handleFileUpload = async () => {
-  //   if (!file) return;
-  //   const storageRef = ref(storage, `notes/${Date.now()}_${file.name}`);
-  //   await uploadBytes(storageRef, file);
-  //   const url = await getDownloadURL(storageRef);
-  //   setFileUrl(url);
-  // };
+  function handleArchive(note) {
+    setNotes((prev) => prev.map((n) => n.id === note.id ? { ...n, archived: !n.archived } : n));
+  }
+  function handleDelete(note) {
+    setNotes((prev) => prev.map((n) => n.id === note.id ? { ...n, trashed: true } : n));
+  }
+  function handleRestore(note) {
+    setNotes((prev) => prev.map((n) => n.id === note.id ? { ...n, trashed: false, archived: false } : n));
+  }
+  function handlePin(note) {
+    setNotes((prev) => prev.map((n) => n.id === note.id ? { ...n, pinned: !n.pinned } : n));
+  }
+  function handleReminder(note) {
+    const newDate = prompt('Set reminder date (YYYY-MM-DD):', note.reminder || '');
+    if (newDate) setNotes((prev) => prev.map((n) => n.id === note.id ? { ...n, reminder: newDate } : n));
+  }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm h-[600px]">
-      <div className="p-6 border-b">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <FileText className="w-5 h-5 text-purple-500" />
-            Notes & Documents
-          </h3>
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            New Note
-          </button>
-        </div>
-      </div>
-
-      <div className="flex h-[500px]">
-        {/* Sidebar */}
-        <div className="w-80 border-r bg-gray-50">
-          <div className="p-4 border-b">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search notes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="p-4 border-b">
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+    <div className="flex min-h-screen bg-[#f9fbfa] text-gray-900">
+      {/* Sidebar */}
+      <aside className="w-56 bg-white border-r border-gray-200 flex flex-col py-6 px-2">
+        <nav className="flex flex-col gap-2">
+          {sidebarItems.map((item) => (
+            <button
+              key={item.key}
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg text-left transition-all duration-150 ${activeSidebar === item.key ? 'bg-gray-100 text-yellow-600' : 'hover:bg-gray-50 text-gray-700'}`}
+              onClick={() => setActiveSidebar(item.key)}
             >
-              <option value="All">All Categories</option>
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4 space-y-2">
-              {filteredNotes.map((note) => (
-                <div
-                  key={note.id}
-                  className={`p-3 rounded-lg cursor-pointer transition-all ${
-                    selectedNote?.id === note.id
-                      ? 'bg-purple-100 border-purple-300'
-                      : 'bg-white border border-gray-200 hover:bg-gray-50'
-                  }`}
-                  onClick={() => setSelectedNote(note)}
+              <span>{item.icon}</span>
+              <span className="font-medium">{item.label}</span>
+            </button>
+          ))}
+          {activeSidebar === 'labels' && (
+            <div className="mt-4">
+              <div className="text-xs text-gray-500 mb-2">Labels</div>
+              {uniqueLabels.length === 0 && <div className="text-xs text-gray-400">No labels</div>}
+              {uniqueLabels.map((label) => (
+                <button
+                  key={label}
+                  className={`block w-full text-left px-4 py-1 rounded hover:bg-gray-100 ${labelFilter === label ? 'bg-yellow-100 text-yellow-700' : 'text-gray-700'}`}
+                  onClick={() => setLabelFilter(label)}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium text-sm line-clamp-1">{note.title}</h4>
-                    <div className="flex items-center gap-1">
-                      {note.isFavorite && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
-                      {note.isShared && <Share2 className="w-3 h-3 text-blue-500" />}
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-600 line-clamp-2 mb-2">{note.content}</p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>{note.category}</span>
-                    <span>{note.updatedAt}</span>
-                  </div>
-                </div>
+                  {label}
+                </button>
               ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {selectedNote ? (
-            <>
-              {/* Note Header */}
-              <div className="p-4 border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-semibold">{selectedNote.title}</h2>
-                    <div className="flex items-center gap-2">
-                      {selectedNote.isFavorite && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
-                      {selectedNote.isShared && <Share2 className="w-4 h-4 text-blue-500" />}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => toggleFavorite(selectedNote.id)}
-                      className="p-2 text-gray-400 hover:text-yellow-500 transition"
-                    >
-                      <Star className={`w-4 h-4 ${selectedNote.isFavorite ? 'text-yellow-500 fill-current' : ''}`} />
-                    </button>
-                    <button
-                      onClick={() => toggleShare(selectedNote.id)}
-                      className="p-2 text-gray-400 hover:text-blue-500 transition"
-                    >
-                      <Share2 className={`w-4 h-4 ${selectedNote.isShared ? 'text-blue-500' : ''}`} />
-                    </button>
-                    <button
-                      onClick={() => setEditingNote(selectedNote)}
-                      className="p-2 text-gray-400 hover:text-purple-500 transition"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => deleteNote(selectedNote.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 transition"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                  <span className="flex items-center gap-1">
-                    <User className="w-4 h-4" />
-                    {selectedNote.author}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    Updated {selectedNote.updatedAt}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Tag className="w-4 h-4" />
-                    {selectedNote.category}
-                  </span>
-                </div>
-              </div>
-
-              {/* Note Content */}
-              <div className="flex-1 p-4 overflow-y-auto">
-                {editingNote ? (
-                  <div className="space-y-4">
-                    <input
-                      type="text"
-                      value={editingNote.title}
-                      onChange={(e) => setEditingNote(prev => prev ? { ...prev, title: e.target.value } : null)}
-                      className="w-full text-xl font-semibold border-b border-gray-200 pb-2 focus:outline-none focus:border-purple-500"
-                    />
-                    <textarea
-                      value={editingNote.content}
-                      onChange={(e) => setEditingNote(prev => prev ? { ...prev, content: e.target.value } : null)}
-                      className="w-full h-64 border rounded-lg p-3 focus:outline-none focus:border-purple-500 resize-none"
-                      placeholder="Write your note content here..."
-                    />
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Tags</label>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {editingNote.tags.map(tag => (
-                          <span
-                            key={tag}
-                            className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm flex items-center gap-1"
-                          >
-                            {tag}
-                            <button
-                              onClick={() => removeTag(tag)}
-                              className="text-purple-600 hover:text-purple-800"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="Add a tag and press Enter"
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                            addTag(e.currentTarget.value.trim());
-                            e.currentTarget.value = '';
-                          }
-                        }}
-                        className="w-full border rounded-lg px-3 py-2 text-sm"
-                      />
-                    </div>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={updateNote}
-                        className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition"
-                      >
-                        Save Changes
-                      </button>
-                      <button
-                        onClick={() => setEditingNote(null)}
-                        className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="prose max-w-none">
-                    <pre className="whitespace-pre-wrap font-sans text-gray-900">{selectedNote.content}</pre>
-                  </div>
-                )}
-                {selectedNote?.fileUrl && (
-                  <div className="mt-4">
-                    <a href={selectedNote.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View Attached File</a>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-500">
-              <div className="text-center">
-                <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p>Select a note to view its content</p>
-              </div>
             </div>
           )}
-        </div>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Top Bar */}
+        <header className="flex items-center justify-between px-8 py-4 border-b border-gray-200 bg-white">
+          <div className="flex items-center gap-4 w-full max-w-xl">
+            <FaSearch className="text-gray-400" />
+            <input
+              className="w-full bg-transparent outline-none text-gray-900 placeholder-gray-400 px-2 py-1"
+              placeholder="Search notes..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <FaUserCircle className="text-3xl text-gray-400 ml-6" />
+        </header>
+
+        {/* Notes Grid */}
+        <main className="flex-1 overflow-y-auto p-8 bg-[#f9fbfa]">
+          <MasonryGrid
+            notes={filteredNotes}
+            onEdit={setEditNote}
+            onArchive={handleArchive}
+            onDelete={handleDelete}
+            onRestore={handleRestore}
+            onPin={handlePin}
+            onReminder={handleReminder}
+          />
+        </main>
       </div>
 
-      {/* Create Note Modal */}
-      {showCreateForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">Create New Note</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Title</label>
-                <input
-                  type="text"
-                  value={newNote.title}
-                  onChange={(e) => setNewNote(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2"
-                  placeholder="Note title"
-                />
-              </div>
+      {/* Floating New Note Button */}
+      <button
+        className="fixed bottom-8 right-8 bg-yellow-400 text-gray-900 rounded-full shadow-lg p-4 flex items-center gap-2 hover:bg-yellow-300 transition-all z-50"
+        onClick={() => setShowNew(true)}
+      >
+        <FaPlus /> New Note
+      </button>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Category</label>
-                <select
-                  value={newNote.category}
-                  onChange={(e) => setNewNote(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2"
-                >
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Content</label>
-                <textarea
-                  value={newNote.content}
-                  onChange={(e) => setNewNote(prev => ({ ...prev, content: e.target.value }))}
-                  className="w-full border rounded-lg px-3 py-2"
-                  rows={8}
-                  placeholder="Write your note content here..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Tags</label>
-                <input
-                  type="text"
-                  placeholder="Add tags separated by commas"
-                  onChange={(e) => {
-                    const tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag);
-                    setNewNote(prev => ({ ...prev, tags }));
-                  }}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
-              </div>
-
-              {/* <div>
-                <label className="block text-sm font-medium mb-1">File</label>
-                <input type="file" onChange={handleFileChange} />
-                <button onClick={handleFileUpload} className="bg-blue-500 text-white px-3 py-1 rounded ml-2">Upload File</button>
-              </div> */}
+      {/* Edit Note Modal */}
+      {editNote && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-200">
+            <input
+              className="w-full bg-transparent border-b border-gray-300 text-gray-900 text-lg font-bold mb-2 outline-none"
+              value={editNote.title}
+              onChange={(e) => setEditNote({ ...editNote, title: e.target.value })}
+              placeholder="Title"
+            />
+            <textarea
+              className="w-full bg-transparent border-b border-gray-300 text-gray-800 mb-2 outline-none min-h-[60px]"
+              value={editNote.body}
+              onChange={(e) => setEditNote({ ...editNote, body: e.target.value })}
+              placeholder="Take a note..."
+            />
+            <div className="flex items-center gap-2 mt-2">
+              <select
+                className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900"
+                value={editNote.color}
+                onChange={(e) => setEditNote({ ...editNote, color: e.target.value })}
+              >
+                {colorOptions.map((c) => (
+                  <option key={c.className} value={c.className}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              {/* Color preview dot */}
+              <span className={`inline-block w-4 h-4 rounded-full ml-2 align-middle ${editNote.color}`}></span>
+              <input
+                className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900"
+                value={editNote.label}
+                onChange={(e) => setEditNote({ ...editNote, label: e.target.value })}
+                placeholder="Label"
+              />
+              <button
+                className={`p-2 rounded ${editNote.pinned ? 'bg-yellow-400 text-gray-900' : 'bg-gray-200 text-yellow-600'}`}
+                onClick={() => setEditNote({ ...editNote, pinned: !editNote.pinned })}
+                title="Pin note"
+              >
+                <FaThumbtack />
+              </button>
+              <button
+                className={`p-2 rounded ${editNote.archived ? 'bg-blue-200 text-blue-900' : 'bg-gray-200 text-blue-600'}`}
+                onClick={() => setEditNote({ ...editNote, archived: !editNote.archived })}
+                title="Archive"
+              >
+                <FaArchive />
+              </button>
+              <button
+                className={`p-2 rounded ${editNote.trashed ? 'bg-red-200 text-red-900' : 'bg-gray-200 text-red-600'}`}
+                onClick={() => setEditNote({ ...editNote, trashed: !editNote.trashed })}
+                title="Trash"
+              >
+                <FaTrash />
+              </button>
+              <button
+                className={`p-2 rounded ${editNote.reminder ? 'bg-purple-200 text-purple-900' : 'bg-gray-200 text-purple-600'}`}
+                onClick={() => handleReminder(editNote)}
+                title="Set Reminder"
+              >
+                <FaBell />
+              </button>
             </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button className="px-4 py-2 rounded bg-gray-200 text-gray-700" onClick={() => setEditNote(null)}>Cancel</button>
+              <button className="px-4 py-2 rounded bg-yellow-400 text-gray-900 font-bold" onClick={() => handleSaveEdit(editNote)}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowCreateForm(false)}
-                className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
+      {/* New Note Modal */}
+      {showNew && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-200">
+            <input
+              className="w-full bg-transparent border-b border-gray-300 text-gray-900 text-lg font-bold mb-2 outline-none"
+              value={newNote.title}
+              onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+              placeholder="Title"
+            />
+            <textarea
+              className="w-full bg-transparent border-b border-gray-300 text-gray-800 mb-2 outline-none min-h-[60px]"
+              value={newNote.body}
+              onChange={(e) => setNewNote({ ...newNote, body: e.target.value })}
+              placeholder="Take a note..."
+            />
+            <div className="flex items-center gap-2 mt-2">
+              <select
+                className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900"
+                value={newNote.color}
+                onChange={(e) => setNewNote({ ...newNote, color: e.target.value })}
               >
-                Cancel
+                {colorOptions.map((c) => (
+                  <option key={c.className} value={c.className}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              {/* Color preview dot */}
+              <span className={`inline-block w-4 h-4 rounded-full ml-2 align-middle ${newNote.color}`}></span>
+              <input
+                className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900"
+                value={newNote.label}
+                onChange={(e) => setNewNote({ ...newNote, label: e.target.value })}
+                placeholder="Label"
+              />
+              <button
+                className={`p-2 rounded ${newNote.pinned ? 'bg-yellow-400 text-gray-900' : 'bg-gray-200 text-yellow-600'}`}
+                onClick={() => setNewNote({ ...newNote, pinned: !newNote.pinned })}
+                title="Pin note"
+              >
+                <FaThumbtack />
               </button>
               <button
-                onClick={createNote}
-                className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition"
+                className={`p-2 rounded ${newNote.archived ? 'bg-blue-200 text-blue-900' : 'bg-gray-200 text-blue-600'}`}
+                onClick={() => setNewNote({ ...newNote, archived: !newNote.archived })}
+                title="Archive"
               >
-                Create Note
+                <FaArchive />
               </button>
+              <button
+                className={`p-2 rounded ${newNote.trashed ? 'bg-red-200 text-red-900' : 'bg-gray-200 text-red-600'}`}
+                onClick={() => setNewNote({ ...newNote, trashed: !newNote.trashed })}
+                title="Trash"
+              >
+                <FaTrash />
+              </button>
+              <button
+                className={`p-2 rounded ${newNote.reminder ? 'bg-purple-200 text-purple-900' : 'bg-gray-200 text-purple-600'}`}
+                onClick={() => handleReminder(newNote)}
+                title="Set Reminder"
+              >
+                <FaBell />
+              </button>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button className="px-4 py-2 rounded bg-gray-200 text-gray-700" onClick={() => setShowNew(false)}>Cancel</button>
+              <button className="px-4 py-2 rounded bg-yellow-400 text-gray-900 font-bold" onClick={handleAddNote}>Add</button>
             </div>
           </div>
         </div>

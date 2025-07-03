@@ -35,6 +35,7 @@ import VoiceRoom from '../components/VoiceRoom';
 import MemberList from '../components/MemberList';
 import RoomChat from '../components/RoomChat';
 import Library from '../components/Library';
+import KnimeOutput from '../components/KnimeOutput';
 import { auth, db } from "../firebase";
 // import { getAnalytics } from "firebase/analytics"; // isko abhi comment kar dein
 
@@ -444,7 +445,7 @@ const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => 
             <div className="flex items-center gap-2">
               <span className="font-medium text-sm">{msg.user}</span>
               <span className="text-xs text-gray-500">
-                {msg.timestamp.toLocaleTimeString()}
+                {new Date(msg.timestamp).toLocaleTimeString()}
               </span>
             </div>
             <p className="text-sm text-gray-700">{msg.text}</p>
@@ -1006,6 +1007,8 @@ export default function Home() {
             </div>
           </div>
         );
+      case 'knime':
+        return <KnimeOutput />;
       default:
         return null;
     }

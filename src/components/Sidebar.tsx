@@ -34,8 +34,13 @@ export default function Sidebar({ onSelect, theme = 'light' }: SidebarProps) {
         <li className={`hover:bg-opacity-80 p-2 rounded cursor-pointer transition-colors ${
           theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-[#292940]'
         }`} onClick={() => onSelect('library')}>📚 Library</li>
+        <li className={`hover:bg-opacity-80 p-2 rounded cursor-pointer transition-colors ${
+          theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-[#292940]'
+        }`} onClick={() => onSelect('knime')}>916 KNIME Output</li>
       </ul>
-      <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`}>© IITCohort</div>
+      <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-400'}`}>
+        © IITCohort
+      </div>
     </div>
   );
-} 
+}
