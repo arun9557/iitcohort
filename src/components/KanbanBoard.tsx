@@ -1,7 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import { 
   Plus, 
@@ -10,7 +28,8 @@ import {
   User, 
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  GripVertical
 } from 'lucide-react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -106,7 +125,65 @@ const getPriorityColor = (priority: string) => {
   }
 };
 
+// Sortable Task Component
+function SortableTask({ task }: { task: Task }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${isDragging ? 'opacity-50' : ''} bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-3 cursor-move`}
+      {...attributes}
+      {...listeners}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <h4 className="font-medium text-sm">{task.title}</h4>
+        <div className="flex items-center gap-1">
+          {getPriorityIcon(task.priority)}
+          <GripVertical className="w-4 h-4 text-gray-400" />
+        </div>
+      </div>
+      <p className="text-xs text-gray-600 mb-3 line-clamp-2">{task.description}</p>
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2">
+          <User className="w-3 h-3 text-gray-500" />
+          <span className="text-gray-600">{task.assignee}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Calendar className="w-3 h-3 text-gray-500" />
+          <span className="text-gray-600">{task.dueDate}</span>
+        </div>
+      </div>
+      <div className="mt-2">
+        <span className={`inline-block px-2 py-1 rounded-full text-xs ${getPriorityColor(task.priority)}`}>
+          {task.priority}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function KanbanBoard({ projectId }: KanbanBoardProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const [columns, setColumns] = useState<Column[]>([
     {
       id: 'todo',
@@ -178,40 +255,38 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
     ]);
   }, [tasks]);
 
-  const onDragEnd = (result: DropResult) => {
-    const { destination, source } = result;
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
 
-    if (!destination) return;
+    if (active.id !== over?.id) {
+      setColumns((columns) => {
+        const oldIndex = columns.findIndex(col => 
+          col.tasks.some(task => task.id === active.id)
+        );
+        const newIndex = columns.findIndex(col => 
+          col.tasks.some(task => task.id === over?.id)
+        );
 
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const newColumns = [...columns];
+          const sourceColumn = newColumns[oldIndex];
+          const destColumn = newColumns[newIndex];
+          
+          const taskIndex = sourceColumn.tasks.findIndex(task => task.id === active.id);
+          const task = sourceColumn.tasks[taskIndex];
+          
+          // Remove from source column
+          sourceColumn.tasks.splice(taskIndex, 1);
+          
+          // Add to destination column
+          destColumn.tasks.push(task);
+          
+          return newColumns;
+        }
+        
+        return columns;
+      });
     }
-
-    const sourceColumn = columns.find(col => col.id === source.droppableId);
-    const destColumn = columns.find(col => col.id === destination.droppableId);
-
-    if (!sourceColumn || !destColumn) return;
-
-    const sourceTasks = Array.from(sourceColumn.tasks);
-    const destTasks = source.droppableId === destination.droppableId 
-      ? sourceTasks 
-      : Array.from(destColumn.tasks);
-
-    const [removed] = sourceTasks.splice(source.index, 1);
-    destTasks.splice(destination.index, 0, removed);
-
-    setColumns(prev => prev.map(col => {
-      if (col.id === source.droppableId) {
-        return { ...col, tasks: sourceTasks };
-      }
-      if (col.id === destination.droppableId) {
-        return { ...col, tasks: destTasks };
-      }
-      return col;
-    }));
   };
 
   const addTask = (columnId: string) => {
@@ -248,7 +323,11 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
         </div>
       </div>
 
-      <DragDropContext onDragEnd={onDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {columns.map((column) => (
@@ -263,64 +342,14 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
                   <span className="text-sm text-gray-500">{column.tasks.length}</span>
                 </div>
 
-                <Droppable droppableId={column.id} isDropDisabled={false}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={`min-h-[200px] transition-colors ${
-                        snapshot.isDraggingOver ? 'bg-blue-50' : ''
-                      }`}
-                    >
-                      {column.tasks.map((task, index) => (
-                        <Draggable key={task.id} draggableId={task.id} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`mb-3 p-3 bg-white rounded-lg shadow-sm border cursor-pointer transition-all hover:scale-[1.02] ${
-                                snapshot.isDragging ? 'shadow-lg rotate-2' : ''
-                              }`}
-                            >
-                              <div className="flex items-start justify-between mb-2">
-                                <h5 className="font-medium text-sm text-gray-900 line-clamp-2">
-                                  {task.title}
-                                </h5>
-                                <button className="text-gray-400 hover:text-gray-600">
-                                  <MoreVertical className="w-4 h-4" />
-                                </button>
-                              </div>
-
-                              <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                                {task.description}
-                              </p>
-
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-1">
-                                  <User className="w-3 h-3 text-gray-400" />
-                                  <span className="text-xs text-gray-600">{task.assignee}</span>
-                                </div>
-                                {getPriorityIcon(task.priority)}
-                              </div>
-
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3 text-gray-400" />
-                                  <span className="text-xs text-gray-600">{task.dueDate}</span>
-                                </div>
-                                <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(task.priority)}`}>
-                                  {task.priority}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
+                <SortableContext
+                  items={column.tasks.map(task => task.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {column.tasks.map((task, index) => (
+                    <SortableTask key={task.id} task={task} />
+                  ))}
+                </SortableContext>
 
                 <button
                   onClick={() => addTask(column.id)}
@@ -333,7 +362,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
             ))}
           </div>
         </div>
-      </DragDropContext>
+      </DndContext>
 
       {/* Stats */}
       <div className="px-6 py-4 bg-gray-50 border-t">
