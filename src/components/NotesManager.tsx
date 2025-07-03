@@ -169,12 +169,13 @@ function MasonryGrid({ notes, onEdit, onArchive, onDelete, onRestore, onPin, onR
 }
 
 export default function NotesManager() {
-  const [activeSidebar, setActiveSidebar] = useState('notes');
-  const [notes, setNotes] = useState(dummyNotes);
-  const [editNote, setEditNote] = useState(null);
-  const [search, setSearch] = useState('');
-  const [showNew, setShowNew] = useState(false);
-  const [newNote, setNewNote] = useState({
+  const [activeSidebar, setActiveSidebar] = useState<string>('notes');
+  const [notes, setNotes] = useState<Note[]>(dummyNotes);
+  const [editNote, setEditNote] = useState<Note | null>(null);
+  const [search, setSearch] = useState<string>('');
+  const [showNew, setShowNew] = useState<boolean>(false);
+  const [newNote, setNewNote] = useState<Note>({
+    id: 0,
     title: '',
     body: '',
     checklist: null,
@@ -183,9 +184,10 @@ export default function NotesManager() {
     pinned: false,
     archived: false,
     trashed: false,
+    date: new Date().toISOString().slice(0, 10),
     reminder: null,
   });
-  const [labelFilter, setLabelFilter] = useState(null);
+  const [labelFilter, setLabelFilter] = useState<string | null>(null);
 
   // Unique labels for Labels section
   const uniqueLabels = Array.from(new Set(notes.filter(n => !n.trashed).map(n => n.label).filter(Boolean)));
@@ -208,7 +210,7 @@ export default function NotesManager() {
     );
   }
 
-  function handleSaveEdit(note) {
+  function handleSaveEdit(note: Note) {
     setNotes((prev) => prev.map((n) => (n.id === note.id ? note : n)));
     setEditNote(null);
   }
@@ -223,22 +225,34 @@ export default function NotesManager() {
       ...prev,
     ]);
     setShowNew(false);
-    setNewNote({ title: '', body: '', checklist: null, color: colorOptions[0].className, label: '', pinned: false, archived: false, trashed: false, reminder: null });
+    setNewNote({
+      id: 0,
+      title: '',
+      body: '',
+      checklist: null,
+      color: colorOptions[0].className,
+      label: '',
+      pinned: false,
+      archived: false,
+      trashed: false,
+      date: new Date().toISOString().slice(0, 10),
+      reminder: null,
+    });
   }
 
-  function handleArchive(note) {
+  function handleArchive(note: Note) {
     setNotes((prev) => prev.map((n) => n.id === note.id ? { ...n, archived: !n.archived } : n));
   }
-  function handleDelete(note) {
+  function handleDelete(note: Note) {
     setNotes((prev) => prev.map((n) => n.id === note.id ? { ...n, trashed: true } : n));
   }
-  function handleRestore(note) {
+  function handleRestore(note: Note) {
     setNotes((prev) => prev.map((n) => n.id === note.id ? { ...n, trashed: false, archived: false } : n));
   }
-  function handlePin(note) {
+  function handlePin(note: Note) {
     setNotes((prev) => prev.map((n) => n.id === note.id ? { ...n, pinned: !n.pinned } : n));
   }
-  function handleReminder(note) {
+  function handleReminder(note: Note) {
     const newDate = prompt('Set reminder date (YYYY-MM-DD):', note.reminder || '');
     if (newDate) setNotes((prev) => prev.map((n) => n.id === note.id ? { ...n, reminder: newDate } : n));
   }
@@ -296,7 +310,7 @@ export default function NotesManager() {
         <main className="flex-1 overflow-y-auto p-8 bg-[#f9fbfa]">
           <MasonryGrid
             notes={filteredNotes}
-            onEdit={setEditNote}
+            onEdit={(note: Note) => setEditNote(note)}
             onArchive={handleArchive}
             onDelete={handleDelete}
             onRestore={handleRestore}
@@ -321,20 +335,20 @@ export default function NotesManager() {
             <input
               className="w-full bg-transparent border-b border-gray-300 text-gray-900 text-lg font-bold mb-2 outline-none"
               value={editNote.title}
-              onChange={(e) => setEditNote({ ...editNote, title: e.target.value })}
+              onChange={(e) => setEditNote({ ...editNote, title: e.target.value } as Note)}
               placeholder="Title"
             />
             <textarea
               className="w-full bg-transparent border-b border-gray-300 text-gray-800 mb-2 outline-none min-h-[60px]"
               value={editNote.body}
-              onChange={(e) => setEditNote({ ...editNote, body: e.target.value })}
+              onChange={(e) => setEditNote({ ...editNote, body: e.target.value } as Note)}
               placeholder="Take a note..."
             />
             <div className="flex items-center gap-2 mt-2">
               <select
                 className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900"
                 value={editNote.color}
-                onChange={(e) => setEditNote({ ...editNote, color: e.target.value })}
+                onChange={(e) => setEditNote({ ...editNote, color: e.target.value } as Note)}
               >
                 {colorOptions.map((c) => (
                   <option key={c.className} value={c.className}>
@@ -343,4 +357,75 @@ export default function NotesManager() {
                 ))}
               </select>
               {/* Color preview dot */}
-              <span className={`
+              <span className={`w-4 h-4 rounded-full border border-gray-300 ${editNote.color}`}></span>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+                onClick={() => setEditNote(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 font-semibold"
+                onClick={() => handleSaveEdit(editNote)}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Note Modal */}
+      {showNew && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-200">
+            <input
+              className="w-full bg-transparent border-b border-gray-300 text-gray-900 text-lg font-bold mb-2 outline-none"
+              value={newNote.title}
+              onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+              placeholder="Title"
+            />
+            <textarea
+              className="w-full bg-transparent border-b border-gray-300 text-gray-800 mb-2 outline-none min-h-[60px]"
+              value={newNote.body}
+              onChange={(e) => setNewNote({ ...newNote, body: e.target.value })}
+              placeholder="Take a note..."
+            />
+            <div className="flex items-center gap-2 mt-2">
+              <select
+                className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900"
+                value={newNote.color}
+                onChange={(e) => setNewNote({ ...newNote, color: e.target.value })}
+              >
+                {colorOptions.map((c) => (
+                  <option key={c.className} value={c.className}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+              {/* Color preview dot */}
+              <span className={`w-4 h-4 rounded-full border border-gray-300 ${newNote.color}`}></span>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+                onClick={() => setShowNew(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 font-semibold"
+                onClick={handleAddNote}
+                disabled={!newNote.title && !newNote.body}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
