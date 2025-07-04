@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { FaSearch, FaUserCircle, FaPlus, FaBell, FaTag, FaArchive, FaTrash, FaThumbtack, FaUndo } from 'react-icons/fa';
 import { auth } from '../firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, addDoc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const sidebarItems = [
@@ -273,8 +273,8 @@ export default function NotesManager() {
       date: new Date().toISOString().slice(0, 10),
       ownerId: currentUser.uid,
     };
-    delete (noteToAdd as any).id;
-    await addDoc(collection(db, 'notes'), noteToAdd);
+    const { id, ...noteToAddWithoutId } = noteToAdd;
+    await addDoc(collection(db, 'notes'), noteToAddWithoutId);
     setShowNew(false);
     setNewNote({
       id: '',
