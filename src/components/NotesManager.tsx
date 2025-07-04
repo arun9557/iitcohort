@@ -273,8 +273,8 @@ export default function NotesManager() {
       date: new Date().toISOString().slice(0, 10),
       ownerId: currentUser.uid,
     };
-    const noteToAddWithoutId = { ...noteToAdd };
-    delete (noteToAddWithoutId as any).id;
+    const noteToAddWithoutId: Record<string, unknown> = { ...noteToAdd };
+    delete noteToAddWithoutId.id;
     await addDoc(collection(db, 'notes'), noteToAddWithoutId);
     setShowNew(false);
     setNewNote({
