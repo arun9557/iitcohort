@@ -960,8 +960,12 @@ function HomeContent() {
       setEmail('');
       setPassword('');
       setConfirmPassword('');
-    } catch (error: any) {
-      setAuthError(error.message);
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'message' in error) {
+        setAuthError((error as { message: string }).message);
+      } else {
+        setAuthError('An unknown error occurred');
+      }
     } finally {
       setIsLoading(false);
     }

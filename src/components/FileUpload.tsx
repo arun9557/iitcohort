@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { storage, db } from '../firebase';
-import { Upload, File, Download, Trash2, Loader } from 'lucide-react';
+import { Upload, File, Download, Loader } from 'lucide-react';
 
 interface UploadedFile {
   id: string;
