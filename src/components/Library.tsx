@@ -6,8 +6,12 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Search
+  Search,
+  Upload,
+  FolderOpen
 } from 'lucide-react';
+import FileUpload from './FileUpload';
+import FileManager from './FileManager';
 
 interface LibraryItem {
   id: string;
@@ -238,6 +242,7 @@ const Library: React.FC = () => {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showFileTypeDropdown, setShowFileTypeDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [activeTab, setActiveTab] = useState<'library' | 'upload' | 'files'>('library');
   const itemsPerPage = 8;
 
   const filteredItems = items.filter(item => {
@@ -287,8 +292,47 @@ const Library: React.FC = () => {
                 <h1 className="text-[#121417] tracking-light text-[32px] font-bold leading-tight">Library</h1>
                 <p className="text-[#677183] text-sm font-normal leading-normal">Explore and manage your academic resources</p>
               </div>
+              
+              {/* Tab Navigation */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('library')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'library'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Library
+                </button>
+                <button
+                  onClick={() => setActiveTab('upload')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'upload'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <Upload className="w-4 h-4 inline mr-1" />
+                  Upload
+                </button>
+                <button
+                  onClick={() => setActiveTab('files')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'files'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <FolderOpen className="w-4 h-4 inline mr-1" />
+                  Files
+                </button>
+              </div>
             </div>
 
+            {/* Tab Content */}
+            {activeTab === 'library' && (
+              <>
             {/* Search Bar */}
             <div className="px-4 py-3">
               <label className="flex flex-col min-w-40 h-12 w-full">
@@ -305,7 +349,11 @@ const Library: React.FC = () => {
                 </div>
               </label>
             </div>
+              </>
+            )}
 
+            {activeTab === 'library' && (
+              <>
             {/* Filters */}
             <div className="flex gap-3 p-3 flex-wrap pr-4">
               {/* Categories Dropdown */}
@@ -399,7 +447,9 @@ const Library: React.FC = () => {
                     className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
                     style={{ backgroundImage: `url(${item.fileUrl})` }}
                     onClick={() => console.log('View item:', item.title)}
-                  />
+                  >
+                    <img src={item.fileUrl} alt={item.title} style={{ display: 'none' }} />
+                  </div>
                   <div>
                     <p className="text-[#121417] text-base font-medium leading-normal">{item.title}</p>
                     <p className="text-[#677183] text-sm font-normal leading-normal">{item.category}</p>
@@ -418,6 +468,7 @@ const Library: React.FC = () => {
                     style={{ backgroundImage: `url(${item.fileUrl})` }}
                     onClick={() => console.log('View item:', item.title)}
                   >
+                    <img src={item.fileUrl} alt={item.title} style={{ display: 'none' }} />
                     <button
                       className="absolute top-2 right-2 p-1 bg-white/80 rounded-full hover:bg-white transition-colors"
                       onClick={(e) => {
@@ -487,6 +538,48 @@ const Library: React.FC = () => {
                 <p className="text-[#121417] tracking-light text-2xl font-bold leading-tight">Computer Science, Math, Literature</p>
               </div>
             </div>
+              </>
+            )}
+
+            {/* Upload Tab */}
+            {activeTab === 'upload' && (
+              <div className="p-4">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload Files</h2>
+                  <p className="text-gray-600">Upload and share your academic resources with the team</p>
+                </div>
+                <FileUpload 
+                  onFileUploaded={(file) => {
+                    console.log('File uploaded:', file);
+                    // Optionally switch to files tab after upload
+                    setActiveTab('files');
+                  }}
+                  maxFileSize={100} // 100MB limit
+                  allowedTypes={[
+                    'image/*',
+                    'video/*', 
+                    'audio/*',
+                    'application/pdf',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'application/vnd.ms-powerpoint',
+                    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                    'text/plain',
+                    'application/zip',
+                    'application/x-rar-compressed'
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Files Tab */}
+            {activeTab === 'files' && (
+              <div className="p-4">
+                <FileManager />
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User, createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { 
   Users, 
@@ -23,7 +23,11 @@ import {
   Music,
   Download,
   Sun,
-  Moon
+  Moon,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import Whiteboard from '../components/Whiteboard';
 import KanbanBoard from '../components/KanbanBoard';
@@ -43,7 +47,7 @@ interface ChatMessage {
   id: string;
   user: string;
   text: string;
-  timestamp: Date;
+  timestamp: Timestamp;
 }
 
 interface ChatSectionProps {
@@ -445,7 +449,11 @@ const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => 
             <div className="flex items-center gap-2">
               <span className="font-medium text-sm">{msg.user}</span>
               <span className="text-xs text-gray-500">
-                {new Date(msg.timestamp).toLocaleTimeString()}
+                {msg.timestamp && typeof msg.timestamp === 'object' && typeof msg.timestamp.toDate === 'function'
+                  ? msg.timestamp.toDate().toLocaleTimeString()
+                  : (typeof msg.timestamp === 'string' || typeof msg.timestamp === 'number')
+                    ? new Date(msg.timestamp).toLocaleTimeString()
+                    : ''}
               </span>
             </div>
             <p className="text-sm text-gray-700">{msg.text}</p>
@@ -709,7 +717,7 @@ const FuturePlanningSection = ({
             onClick={() => setActiveTab('meetings')}
             className="bg-green-50 text-green-700 py-2 px-3 rounded-lg hover:bg-green-100 transition text-sm font-medium"
           >
-            📅 Meetings
+             Meetings
           </button>
           <button 
             onClick={() => setActiveTab('whiteboard')}
@@ -873,6 +881,16 @@ export default function Home() {
     }
   ]);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  
+  // Authentication states
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -904,7 +922,7 @@ export default function Home() {
     await addDoc(collection(db, 'chats'), {
       user: user.email,
       text: message,
-      timestamp: new Date()
+      timestamp: Timestamp.now()
     });
     setMessage('');
   };
@@ -915,6 +933,39 @@ export default function Home() {
       localStorage.setItem('iitcohort-theme', newTheme);
       return newTheme;
     });
+  };
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setIsLoading(true);
+
+    if (isSignUp && password !== confirmPassword) {
+      setAuthError('Passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setAuthError('Password must be at least 6 characters long');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      setAuthError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderTabContent = () => {
@@ -1030,25 +1081,121 @@ export default function Home() {
             <h1 className={`text-3xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>IITCohort</h1>
             <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Smart Batch Collaboration Platform</p>
           </div>
-          <button
-            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-medium"
-            onClick={() => signInWithEmailAndPassword(auth, 'demo@iitcohort.com', 'demo123')}
-          >
-            Sign in as Demo User
-          </button>
-          <button
-            className={`w-full mt-3 py-3 px-4 rounded-lg transition-all duration-200 font-medium ${
-              theme === 'dark' 
-                ? 'bg-gray-700 text-white hover:bg-gray-600' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            onClick={() => createUserWithEmailAndPassword(auth, 'demo@iitcohort.com', 'demo123')}
-          >
-            Sign up as Demo User
-          </button>
-          <p className={`text-center text-sm mt-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-            Experience the full platform with demo data
-          </p>
+          
+          {/* Authentication Form */}
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    theme === 'dark' 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                  }`}
+                  placeholder="Enter your email"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    theme === 'dark' 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                  }`}
+                  placeholder="Enter your password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            
+            {isSignUp && (
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      theme === 'dark' 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
+                    placeholder="Confirm your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {authError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {authError}
+              </div>
+            )}
+            
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+            </button>
+          </form>
+          
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setAuthError('');
+                setEmail('');
+                setPassword('');
+                setConfirmPassword('');
+              }}
+              className={`text-sm font-medium ${
+                theme === 'dark' 
+                  ? 'text-blue-400 hover:text-blue-300' 
+                  : 'text-blue-600 hover:text-blue-500'
+              }`}
+            >
+              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+            </button>
+          </div>
           
           {/* Theme toggle on login page */}
           <div className="mt-6 flex justify-center">

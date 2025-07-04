@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 interface SidebarProps {
   onSelect: (tab: string) => void;
   theme?: 'light' | 'dark';

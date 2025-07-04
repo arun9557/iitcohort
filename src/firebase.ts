@@ -3,6 +3,7 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { getDatabase } from 'firebase/database';
+import { doc, collection, addDoc } from 'firebase/firestore';
 
 // Firebase configuration using environment variables with fallback
 const firebaseConfig = {
