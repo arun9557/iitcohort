@@ -19,12 +19,14 @@ interface FileUploadProps {
   onFileUploaded?: (file: UploadedFile) => void;
   maxFileSize?: number;
   className?: string;
+  allowedTypes?: string[];
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
   onFileUploaded,
   maxFileSize = 50,
-  className = ''
+  className = '',
+  allowedTypes = ['*']
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: { progress: number; error?: string } }>({});
@@ -44,6 +46,17 @@ const FileUpload: React.FC<FileUploadProps> = ({
       setUploadingFiles(prev => ({
         ...prev,
         [file.name]: { progress: 0, error: `File size must be less than ${maxFileSize}MB` }
+      }));
+      return;
+    }
+
+    if (
+      allowedTypes.length &&
+      !allowedTypes.some(type => type === '*' || file.type.match(type.replace('*', '.*')))
+    ) {
+      setUploadingFiles(prev => ({
+        ...prev,
+        [file.name]: { progress: 0, error: 'File type not allowed' }
       }));
       return;
     }
@@ -187,6 +200,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           multiple
           onChange={handleFileInput}
           className="hidden"
+          accept={allowedTypes.join(',')}
         />
       </div>
 
