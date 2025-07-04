@@ -3,7 +3,6 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { getDatabase } from 'firebase/database';
-import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 
