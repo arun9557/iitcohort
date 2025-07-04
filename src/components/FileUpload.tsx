@@ -1,10 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { storage, db } from '../firebase';
 import { Upload, File, Download, Loader } from 'lucide-react';
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
 
 interface UploadedFile {
   id: string;
@@ -92,7 +90,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
       async () => {
         try {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          
           const fileData = {
             name: file.name,
             size: file.size,
@@ -103,9 +100,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
             uploadedAt: serverTimestamp(),
             createdAt: new Date()
           };
-
           const docRef = await addDoc(collection(db, 'files'), fileData);
-          
           const uploadedFile: UploadedFile = {
             id: docRef.id,
             name: file.name,
@@ -116,10 +111,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
             uploadedAt: new Date(),
             path: fileData.path
           };
-
           setUploadedFiles(prev => [...prev, uploadedFile]);
           onFileUploaded?.(uploadedFile);
-
           setUploadingFiles(prev => {
             const newState = { ...prev };
             delete newState[file.name];
