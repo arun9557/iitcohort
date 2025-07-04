@@ -98,7 +98,7 @@ const dummyNotes = [
 ];
 
 type Note = {
-  id: string;
+  id?: string;
   title: string;
   body: string;
   pinned: boolean;
@@ -273,7 +273,8 @@ export default function NotesManager() {
       date: new Date().toISOString().slice(0, 10),
       ownerId: currentUser.uid,
     };
-    const { id: _id, ...noteToAddWithoutId } = noteToAdd;
+    const noteToAddWithoutId = { ...noteToAdd };
+    delete (noteToAddWithoutId as any).id;
     await addDoc(collection(db, 'notes'), noteToAddWithoutId);
     setShowNew(false);
     setNewNote({
