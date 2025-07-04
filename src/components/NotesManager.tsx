@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaSearch, FaUserCircle, FaPlus, FaBell, FaTag, FaArchive, FaTrash, FaThumbtack, FaUndo } from 'react-icons/fa';
+import { auth } from '../firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 const sidebarItems = [
   { key: 'notes', label: 'Notes', icon: <FaTag /> },
@@ -105,6 +107,8 @@ type Note = {
   archived: boolean;
   trashed: boolean;
   reminder: string | null;
+  visibility: 'public' | 'private';
+  ownerId: string;
 };
 
 interface MasonryGridProps {
@@ -170,7 +174,7 @@ function MasonryGrid({ notes, onEdit, onArchive, onDelete, onRestore, onPin, onR
 
 export default function NotesManager() {
   const [activeSidebar, setActiveSidebar] = useState<string>('notes');
-  const [notes, setNotes] = useState<Note[]>(dummyNotes);
+  const [notes, setNotes] = useState<Note[]>(dummyNotes.map(n => ({ ...n, visibility: 'public', ownerId: '' })));
   const [editNote, setEditNote] = useState<Note | null>(null);
   const [search, setSearch] = useState<string>('');
   const [showNew, setShowNew] = useState<boolean>(false);
@@ -186,14 +190,26 @@ export default function NotesManager() {
     trashed: false,
     date: new Date().toISOString().slice(0, 10),
     reminder: null,
+    visibility: 'public',
+    ownerId: '',
   });
   const [labelFilter, setLabelFilter] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Unique labels for Labels section
   const uniqueLabels = Array.from(new Set(notes.filter(n => !n.trashed).map(n => n.label).filter(Boolean)));
 
-  // Filter notes by sidebar section
+  // Filter notes by sidebar section and visibility
   let filteredNotes = notes.filter((n) => {
+    // Only show public notes or private notes owned by current user
+    if (n.visibility === 'private' && n.ownerId !== currentUser?.uid) return false;
     if (activeSidebar === 'notes') return !n.archived && !n.trashed;
     if (activeSidebar === 'reminders') return !!n.reminder && !n.trashed;
     if (activeSidebar === 'archive') return n.archived && !n.trashed;
@@ -216,11 +232,13 @@ export default function NotesManager() {
   }
 
   function handleAddNote() {
+    if (!currentUser) return; // Don't add if not logged in
     setNotes((prev) => [
       {
         ...newNote,
         id: Date.now(),
         date: new Date().toISOString().slice(0, 10),
+        ownerId: currentUser.uid, // set owner
       },
       ...prev,
     ]);
@@ -237,6 +255,8 @@ export default function NotesManager() {
       trashed: false,
       date: new Date().toISOString().slice(0, 10),
       reminder: null,
+      visibility: 'public',
+      ownerId: '',
     });
   }
 
@@ -408,6 +428,30 @@ export default function NotesManager() {
               {/* Color preview dot */}
               <span className={`w-4 h-4 rounded-full border border-gray-300 ${newNote.color}`}></span>
             </div>
+            {/* Visibility Option */}
+            <div className="flex items-center gap-4 mt-4">
+              <span className="text-sm font-medium">Visibility:</span>
+              <label className="flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="public"
+                  checked={newNote.visibility === 'public'}
+                  onChange={() => setNewNote({ ...newNote, visibility: 'public' })}
+                />
+                <span>Public</span>
+              </label>
+              <label className="flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="visibility"
+                  value="private"
+                  checked={newNote.visibility === 'private'}
+                  onChange={() => setNewNote({ ...newNote, visibility: 'private' })}
+                />
+                <span>Private</span>
+              </label>
+            </div>
             <div className="flex justify-end gap-2 mt-4">
               <button
                 className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -418,7 +462,7 @@ export default function NotesManager() {
               <button
                 className="px-4 py-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 font-semibold"
                 onClick={handleAddNote}
-                disabled={!newNote.title && !newNote.body}
+                disabled={!newNote.title.trim() || !currentUser}
               >
                 Add
               </button>
