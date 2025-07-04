@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Star, 
   ChevronDown,
@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import FileUpload from './FileUpload';
 import FileManager from './FileManager';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
 
 interface LibraryItem {
   id: string;
@@ -59,181 +61,8 @@ const sortOptions = [
   'Highest Rated'
 ];
 
-const initialLibraryItems: LibraryItem[] = [
-  {
-    id: '1',
-    title: 'Advanced Physics Notes',
-    description: '',
-    type: 'document',
-    category: 'Physics',
-    tags: [],
-    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBogmfqvCQF2wZuS8KzeVNTBmqRG3C5Y1bUJUytc8on-MXXhJxK8JEohONW2tEIsNIS4LX2WIMBmCLbh7nDLYlNe1EZfYwlMH59pRah72fiiCSvTSnxAiPczltcrJZtrD1mAu_-aEkdsfzQEfJPbkpuQq-enycejkyDKDhE-8fmETJJAefZrxUnjQYaKXOEu_DZ8nHjcP6PJ0J8VX3QBBR9ZsWKBmA4hya67VpDFKLjyFwGnN8mfn2zBCqrT7T9znTUOh8LY95NjYU',
-    fileName: 'Advanced Physics Notes',
-    fileSize: 2.3 * 1024 * 1024,
-    uploadedBy: 'Prof. Sharma',
-    uploadedAt: '2024-04-01',
-    downloads: 45,
-    rating: 4.5,
-    isPublic: true,
-    isFavorite: true
-  },
-  {
-    id: '2',
-    title: 'Quantum Mechanics',
-    description: '',
-    type: 'document',
-    category: 'Physics',
-    tags: [],
-    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmu6u25b5uSe244JVnbuS8bq-xPvg789AQ0xB9V5x3h5vm55N-lxzWAp7rBijg4QeAz1On93uwyS65LOaSPrhq3YIuRfpKc4oMOFB91F1OOM4lk0DpGlpJhuCrPEzvBckCsVaPY1ljwAU9TU7YoRHL1YlXAb9DMmBHIQRkIB88n3E2YElqoAV6KzyisRXWcdHlLHdn16cieQSJrByKZZSlOgV5cLp7UkexsMOpFaVL2p6sAGAx9GnfuOjkvS6B9jtC6oVUi6-6oho',
-    fileName: 'Quantum Mechanics',
-    fileSize: 1.8 * 1024 * 1024,
-    uploadedBy: 'Dr. Patel',
-    uploadedAt: '2024-03-31',
-    downloads: 32,
-    rating: 4.2,
-    isPublic: true,
-    isFavorite: false
-  },
-  {
-    id: '3',
-    title: 'Thermodynamics',
-    description: '',
-    type: 'document',
-    category: 'Physics',
-    tags: [],
-    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuADwXPIsp61oE-oRMicIqLl_kHOP2bun2BsDTkeAyueCsOOoR8RbrZqmSLHI5tEy41VKv6wXqBQpZGpB1iz_UIu1nborxIut9bC5IZ25l6IgCD5-9aT8SOlojF3IGKlsPVIiNaSsVoF1IPWJS-b9p7wiNiQhRApOYGMa2ai1n1qvShf-zQkjXZ3x5wc4FrwAKygNLErLHdT6FFg-kGD0VHeFLi8kTdh2EP8ESNmc3p8kxLMO7ETUlVf9XaY4W6MLj6Z6Ffp82WksQY',
-    fileName: 'Thermodynamics',
-    fileSize: 3.1 * 1024 * 1024,
-    uploadedBy: 'Prof. Kumar',
-    uploadedAt: '2024-03-29',
-    downloads: 28,
-    rating: 4.0,
-    isPublic: true,
-    isFavorite: true
-  },
-  {
-    id: '4',
-    title: 'Electromagnetism',
-    description: '',
-    type: 'document',
-    category: 'Physics',
-    tags: [],
-    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA2nJaVrnFkl2cMA8eC5rKHjK8xMIk3PR20HO2Az1Hw3KCcJiKaZz3wxHT3ccze8AAmc4vUj7nwHxOkotbPw2Wcxeu9Vky8vY9K41rwOYzGFIpeaiJo_EkdsMJnOJs1Ts1NcjPyC-02QsagqOPrsU-mMSrx2kPVt_oV6S18cvcr5umR1LDDkpYKE8QWTgmwhpomlyGkEF3f7Iq5NuDArg9anjOMsyhLY0dvkswWg7ck7mgZjY2xi1_OhOD-pyEBVCMZ2o11sODrCU8',
-    fileName: 'Electromagnetism',
-    fileSize: 4.2 * 1024 * 1024,
-    uploadedBy: 'Dr. Singh',
-    uploadedAt: '2024-03-22',
-    downloads: 56,
-    rating: 4.7,
-    isPublic: true,
-    isFavorite: false
-  },
-  {
-    id: '5',
-    title: 'Introduction to Algorithms',
-    description: '',
-    type: 'document',
-    category: 'Computer Science',
-    tags: [],
-    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBdKjYw7PiWmaowVBnlXb0tPy9FhKyIaWOwFs2TXz8eZuifotWjraeXeo-SzZkHYnQkfkC_6sKWsXcPdJvqp0cuWcYKci9j4nP_KgeRgwQcdHnVovo8siDe_WTl3dFbFyD2QW68VdY0mLj3pgzHdbBsnkfTa1jYGnRvTxy0Ri80n6nu2UMplERjleoX7Bb6os9RLHyor_1kY6Surh7zWwVU7NMvY2bekU4G-0-Kd-yPjh3bLx_G_MCJryfbZk45Htk-TYU3TX_oTE0',
-    fileName: 'Introduction to Algorithms',
-    fileSize: 5.6 * 1024 * 1024,
-    uploadedBy: 'Prof. Gupta',
-    uploadedAt: '2024-03-15',
-    downloads: 89,
-    rating: 4.8,
-    isPublic: true,
-    isFavorite: true
-  },
-  {
-    id: '6',
-    title: 'Calculus I Notes',
-    description: '',
-    type: 'document',
-    category: 'Mathematics',
-    tags: [],
-    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnxHyi-c3KH73eNIjRHeRYIoX1LbfQ3B8YwymTUK6FtbHBXAVjb9MywY774eWZ1CZs4BpKzbXl2iPbkbB53tGrOh3pCDKksDDgDY83AZTMgNqaRYX_e1gO7fGRCYas8k7DiUnFtsXKfryFMESij9OOVcTbPW7vYkzzM761Ld7Zn029nq_nNFn27psD0y_xKl1t974BrYMaFNBwz_OzMi-1bgmNXouaHafXH6Z-SbxsXlBcIS0kbqwI9rxaKYa2GnD2QHkpFjedtSo',
-    fileName: 'Calculus I Notes',
-    fileSize: 2.8 * 1024 * 1024,
-    uploadedBy: 'Dr. Verma',
-    uploadedAt: '2024-03-08',
-    downloads: 67,
-    rating: 4.3,
-    isPublic: true,
-    isFavorite: false
-  },
-  {
-    id: '7',
-    title: "Shakespeare's Sonnets",
-    description: '',
-    type: 'document',
-    category: 'Literature',
-    tags: [],
-    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCa_QZRhT5S3KUZUPYPJjx5KOtWO-SJJ4H3FXC3t01Gbuk5aL7v3ciaw-5z7XmCvAYP5HSwuxS1hV1TM0QBOn0BmxthJDXe5xMiupE1YyFWAI5d6owsCEM-dI7gKFlXasuoieHkQ7ouzXuzJYSQyYsil0BZ2CxF6KUeZTVWuPdlzsQZU3G_xVygpbP0AnpGE635zUARKlbz4elx_UVZ_m_S6E874pFd53iZp8TUYXsJaSE4EJLxF4YalYfb6xWpZDZwO3m1c40WQxk',
-    fileName: "Shakespeare's Sonnets",
-    fileSize: 1.5 * 1024 * 1024,
-    uploadedBy: 'Prof. Johnson',
-    uploadedAt: '2024-02-15',
-    downloads: 34,
-    rating: 4.1,
-    isPublic: true,
-    isFavorite: true
-  },
-  {
-    id: '8',
-    title: 'Linear Algebra',
-    description: '',
-    type: 'document',
-    category: 'Mathematics',
-    tags: [],
-    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAoSlQ3b2lU3UbGzKlWnJPUFC2RjprILzJ5IZogg8NRiqsP36RReM7Zw209gHZQ4pgsU3SKf2OxadGYRUK13Y3n8qP-djk3UEQT_rdaiq4SiTjiLsRRxd4E1j-NOgeyge5Lh0VTO8XFEmBZWJ0bdyBihHNf1Ps8WEXlMcel8dse3p42gx_wm1YlDlB7ttjSq8NVygRW_l_7-QQ2q9SWvqPLcwHd3Sh3lGozlWUOGrgoRlGRZvkkeLXG4byBIQoeNi2Hi9VYyUYj8z4',
-    fileName: 'Linear Algebra',
-    fileSize: 3.9 * 1024 * 1024,
-    uploadedBy: 'Dr. Kumar',
-    uploadedAt: '2024-02-10',
-    downloads: 78,
-    rating: 4.6,
-    isPublic: true,
-    isFavorite: false
-  },
-  {
-    id: '9',
-    title: 'Organic Chemistry',
-    description: '',
-    type: 'document',
-    category: 'Chemistry',
-    tags: [],
-    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC1PmXxR2BzTUeG2Uf6HG7tFxeHJ3gunSf1OOfi-0rbVIn_374EzXIofPzraPlCmOawiogenw_vawjdXkk4FrNvg2qNPSyglYkjeu0CppXc4-V9zfDmcY59U6DsKfWMA34FTo5wnL1zryOy7Vi6_QdUvjWvDEjIIYqKvJzqtdbdA_6j45D4LkVlnVr9Sr8WLdGwmBrcZRxWRU4NEOMT4QWPeoB9yYp3u4yK-eysAstKzRNDdGARYcCw_alEyVZoyMOXzm1mDAGzVDk',
-    fileName: 'Organic Chemistry',
-    fileSize: 4.7 * 1024 * 1024,
-    uploadedBy: 'Prof. Singh',
-    uploadedAt: '2024-01-15',
-    downloads: 92,
-    rating: 4.4,
-    isPublic: true,
-    isFavorite: true
-  },
-  {
-    id: '10',
-    title: 'World History',
-    description: '',
-    type: 'document',
-    category: 'History',
-    tags: [],
-    fileUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDAbct-7hy4p8uxEKjRZW7yIC6EyvV-kQvkplShH2TAriKfrwpxkD-B_XxqPW16MMANlN-M48iw2I6vXasqoAkaYM9nQ0T69xmn_g7nZgtkb8pIVYSr3PPCE4XhPqQCs31sNCwcogEnGLAEdcXBHLr21fguTLW9EHvdV-aiUZ94ORBFoJtkOkOb2vhijcRJlQMmRL2DfhVDYBMvbS8td8ytBN9KulD_VIsPhG9CqAEUEEO0upjSM1OcaDCOErl-6B4gI2HSqjLDGrY',
-    fileName: 'World History',
-    fileSize: 6.1 * 1024 * 1024,
-    uploadedBy: 'Prof. Brown',
-    uploadedAt: '2024-01-10',
-    downloads: 45,
-    rating: 4.0,
-    isPublic: true,
-    isFavorite: false
-  }
-];
-
 const Library: React.FC = () => {
-  const [items, setItems] = useState<LibraryItem[]>(initialLibraryItems);
+  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedFileType, setSelectedFileType] = useState('All Types');
@@ -245,7 +74,36 @@ const Library: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'library' | 'upload' | 'files'>('library');
   const itemsPerPage = 8;
 
-  const filteredItems = items.filter(item => {
+  useEffect(() => {
+    // Real-time fetch of public files from Firestore
+    const q = query(collection(db, 'files'), where('isPublic', '==', true));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const files: LibraryItem[] = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title || data.name || '',
+          description: data.description || '',
+          type: data.type || 'document',
+          category: data.category || 'Other',
+          tags: data.tags || [],
+          fileUrl: data.url || '',
+          fileName: data.name || '',
+          fileSize: data.size || 0,
+          uploadedBy: data.uploadedBy || '',
+          uploadedAt: data.uploadedAt ? (typeof data.uploadedAt === 'string' ? data.uploadedAt : (data.uploadedAt.toDate ? data.uploadedAt.toDate().toISOString() : '')) : '',
+          downloads: data.downloads || 0,
+          rating: data.rating || 0,
+          isPublic: true,
+          isFavorite: false,
+        };
+      });
+      setLibraryItems(files);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const filteredItems = libraryItems.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All Categories' || item.category === selectedCategory;
@@ -273,10 +131,10 @@ const Library: React.FC = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentItems = sortedItems.slice(startIndex, endIndex);
 
-  const recentlyUploaded = items.slice(0, 4); // First 4 items as recently uploaded
+  const recentlyUploaded = libraryItems.slice(0, 4); // First 4 items as recently uploaded
 
   const toggleFavorite = (id: string) => {
-    setItems(prev => prev.map(item => 
+    setLibraryItems(prev => prev.map(item => 
       item.id === id ? { ...item, isFavorite: !item.isFavorite } : item
     ));
   };
@@ -527,7 +385,7 @@ const Library: React.FC = () => {
             <div className="flex flex-wrap gap-4 p-4">
               <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#dddfe4]">
                 <p className="text-[#121417] text-base font-medium leading-normal">Total Files</p>
-                <p className="text-[#121417] tracking-light text-2xl font-bold leading-tight">{items.length}</p>
+                <p className="text-[#121417] tracking-light text-2xl font-bold leading-tight">{libraryItems.length}</p>
               </div>
               <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-xl p-6 border border-[#dddfe4]">
                 <p className="text-[#121417] text-base font-medium leading-normal">Storage Used</p>

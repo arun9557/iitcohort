@@ -119,7 +119,7 @@ const ProjectsSection = ({ futureProjects, setActiveTab }: { futureProjects: Fut
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
+        <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
           <Users className="w-5 h-5 text-blue-500" />
           Projects Discussion
         </h3>
@@ -289,7 +289,7 @@ const LecturesSection = ({ setActiveTab }: { setActiveTab: (tab: string) => void
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
+        <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
           <BookOpen className="w-5 h-5 text-indigo-500" />
           Lecture Content
         </h3>
