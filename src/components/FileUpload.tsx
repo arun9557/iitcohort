@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { storage, db } from '../firebase';
 import { Upload, File, Download, Loader } from 'lucide-react';
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
 
 interface UploadedFile {
   id: string;
