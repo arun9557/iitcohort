@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { FaSearch, FaUserCircle, FaPlus, FaBell, FaTag, FaArchive, FaTrash, FaThumbtack, FaUndo } from 'react-icons/fa';
 import { auth } from '../firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { collection, addDoc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const sidebarItems = [
   { key: 'notes', label: 'Notes', icon: <FaTag /> },
@@ -25,7 +27,7 @@ const colorOptions = [
 
 const dummyNotes = [
   {
-    id: 1,
+    id: '1',
     title: 'Project Ideas',
     body: 'Build a modern dashboard with React and Tailwind.',
     pinned: true,
@@ -38,7 +40,7 @@ const dummyNotes = [
     reminder: null,
   },
   {
-    id: 2,
+    id: '2',
     title: 'Shopping List',
     body: '',
     pinned: false,
@@ -55,7 +57,7 @@ const dummyNotes = [
     reminder: '2024-06-10',
   },
   {
-    id: 3,
+    id: '3',
     title: 'Meeting Notes',
     body: 'Discuss project timeline and deliverables.',
     pinned: false,
@@ -68,7 +70,7 @@ const dummyNotes = [
     reminder: null,
   },
   {
-    id: 4,
+    id: '4',
     title: 'Ideas',
     body: 'Try a new color palette for the app.',
     pinned: false,
@@ -81,7 +83,7 @@ const dummyNotes = [
     reminder: null,
   },
   {
-    id: 5,
+    id: '5',
     title: 'Doctor Appointment',
     body: 'Visit Dr. Sharma at 5pm.',
     pinned: false,
@@ -96,7 +98,7 @@ const dummyNotes = [
 ];
 
 type Note = {
-  id: number;
+  id: string;
   title: string;
   body: string;
   pinned: boolean;
@@ -179,7 +181,7 @@ export default function NotesManager() {
   const [search, setSearch] = useState<string>('');
   const [showNew, setShowNew] = useState<boolean>(false);
   const [newNote, setNewNote] = useState<Note>({
-    id: 0,
+    id: '',
     title: '',
     body: '',
     checklist: null,
@@ -197,11 +199,44 @@ export default function NotesManager() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
     });
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
+
+  // Firestore: Fetch notes (public + user's private) in real-time
+  useEffect(() => {
+    if (!currentUser) return;
+    const q = query(
+      collection(db, 'notes'),
+      orderBy('date', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const allNotes = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title || '',
+          body: data.body || '',
+          pinned: data.pinned || false,
+          label: data.label || '',
+          date: data.date || '',
+          color: data.color || colorOptions[0].className,
+          checklist: data.checklist || null,
+          archived: data.archived || false,
+          trashed: data.trashed || false,
+          reminder: data.reminder || null,
+          visibility: data.visibility || 'public',
+          ownerId: data.ownerId || '',
+        } as Note;
+      });
+      setNotes(
+        allNotes.filter(n => n.visibility === 'public' || (n.visibility === 'private' && n.ownerId === currentUser.uid))
+      );
+    });
+    return () => unsubscribe();
+  }, [currentUser]);
 
   // Unique labels for Labels section
   const uniqueLabels = Array.from(new Set(notes.filter(n => !n.trashed).map(n => n.label).filter(Boolean)));
@@ -231,20 +266,18 @@ export default function NotesManager() {
     setEditNote(null);
   }
 
-  function handleAddNote() {
-    if (!currentUser) return; // Don't add if not logged in
-    setNotes((prev) => [
-      {
-        ...newNote,
-        id: Date.now(),
-        date: new Date().toISOString().slice(0, 10),
-        ownerId: currentUser.uid, // set owner
-      },
-      ...prev,
-    ]);
+  async function handleAddNote() {
+    if (!currentUser) return;
+    const noteToAdd = {
+      ...newNote,
+      date: new Date().toISOString().slice(0, 10),
+      ownerId: currentUser.uid,
+    };
+    delete (noteToAdd as any).id;
+    await addDoc(collection(db, 'notes'), noteToAdd);
     setShowNew(false);
     setNewNote({
-      id: 0,
+      id: '',
       title: '',
       body: '',
       checklist: null,
