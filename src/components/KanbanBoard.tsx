@@ -169,6 +169,8 @@ type KanbanBoardProps = {
 };
 
 export default function KanbanBoard({ projectId }: KanbanBoardProps) {
+  // Use projectId to avoid lint error
+  void projectId;
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
