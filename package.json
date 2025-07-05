@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "sync-users": "node sync-auth-to-db.js",
+    "sync-demo": "node sync-auth-to-db-simple.js",
+    "add-demo-users": "node sync-demo-users.js",
+    "test-db": "node test-database.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",

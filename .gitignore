@@ -39,9 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-<<<<<<< HEAD
 
-.vercel
-=======
+# firebase
+serviceAccountKey.json
+firebase-adminsdk-*.json
+
+# env files
 .env
->>>>>>> 3556e770232bd8627cdba157b73ba548dfee2195
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
