@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ref, onValue } from 'firebase/database';
 import { realtimeDb } from '../firebase';
+import type { DataSnapshot } from 'firebase/database';
 
 interface Member {
   uid: string;
@@ -28,14 +29,13 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
         
         if (realtimeDb) {
           const membersRef = ref(realtimeDb, 'users');
-          const snapshot = await new Promise<unknown>((resolve) => {
+          const snapshot = await new Promise<DataSnapshot>((resolve) => {
             const unsubscribe = onValue(membersRef, (snapshot) => {
               unsubscribe();
               resolve(snapshot);
             });
           });
-          // Type assertion for snapshot
-          const data = (snapshot as any).val ? (snapshot as any).val() || {} : {};
+          const data = snapshot.val() || {};
           Object.entries(data).forEach(([uid, info]: [string, unknown]) => {
             onlineUsers.set(uid, {
               status: (info as { status: string }).status,
