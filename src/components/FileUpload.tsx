@@ -200,7 +200,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       </div>
 
       {Object.entries(uploadingFiles).map(([fileName, { progress, error }]) => (
-        <div key={fileName} className="bg-white border rounded-lg p-4">
+        <div key={fileName} className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <File className="w-6 h-6 text-gray-500" />

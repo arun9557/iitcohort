@@ -22,8 +22,6 @@ import {
   Image,
   Music,
   Download,
-  Sun,
-  Moon,
   Mail,
   Lock,
   Eye,
@@ -426,7 +424,7 @@ const LecturesSection = ({ setActiveTab }: { setActiveTab: (tab: string) => void
 const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => void }> = ({ messages, sendMessage, message, setMessage, setActiveTab }) => (
   <div className="bg-white rounded-lg p-6 shadow-sm">
     <div className="flex items-center justify-between mb-4">
-      <h3 className="text-lg font-semibold flex items-center gap-2">
+      <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
         <MessageCircle className="w-5 h-5 text-green-500" />
         Quick Chat
       </h3>
@@ -518,7 +516,7 @@ const LibrarySection = ({ setActiveTab }: { setActiveTab: (tab: string) => void 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
+        <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
           <BookOpen className="w-5 h-5 text-purple-500" />
           Recent Library Files
         </h3>
@@ -667,7 +665,7 @@ const FuturePlanningSection = ({
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
+        <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
           <Lightbulb className="w-5 h-5 text-yellow-500" />
           Future Projects
         </h3>
@@ -879,8 +877,6 @@ function HomeContent() {
       color: 'green'
     }
   ]);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  
   // Authentication states
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -898,13 +894,7 @@ function HomeContent() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    // Load theme from localStorage
-    const savedTheme = localStorage.getItem('iitcohort-theme') as 'light' | 'dark';
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-  }, []);
+
 
   useEffect(() => {
     if (!user) return;
@@ -926,13 +916,7 @@ function HomeContent() {
     setMessage('');
   };
 
-  const toggleTheme = () => {
-    setTheme(prev => {
-      const newTheme = prev === 'light' ? 'dark' : 'light';
-      localStorage.setItem('iitcohort-theme', newTheme);
-      return newTheme;
-    });
-  };
+
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1070,25 +1054,21 @@ function HomeContent() {
 
   if (!user) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${
-        theme === 'dark' 
-          ? 'bg-gradient-to-br from-gray-900 to-gray-800' 
-          : 'bg-gradient-to-br from-blue-50 to-indigo-100'
-      }`}>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-8 rounded-2xl shadow-xl max-w-md w-full mx-4`}
+          className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full mx-4"
         >
           <div className="text-center mb-8">
-            <h1 className={`text-3xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>IITCohort</h1>
-            <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Smart Batch Collaboration Platform</p>
+            <h1 className="text-3xl font-bold mb-2 text-gray-900">IITCohort</h1>
+            <p className="text-gray-600">Smart Batch Collaboration Platform</p>
           </div>
           
           {/* Authentication Form */}
           <form onSubmit={handleAuth} className="space-y-4">
             <div>
-              <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+              <label className="block text-sm font-medium mb-2 text-gray-700">
                 Email Address
               </label>
               <div className="relative">
@@ -1097,11 +1077,7 @@ function HomeContent() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    theme === 'dark' 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                  }`}
+                  className="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                   placeholder="Enter your email"
                   required
                 />
@@ -1109,7 +1085,7 @@ function HomeContent() {
             </div>
             
             <div>
-              <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+              <label className="block text-sm font-medium mb-2 text-gray-700">
                 Password
               </label>
               <div className="relative">
@@ -1118,11 +1094,7 @@ function HomeContent() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    theme === 'dark' 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                  }`}
+                  className="w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                   placeholder="Enter your password"
                   required
                 />
@@ -1138,7 +1110,7 @@ function HomeContent() {
             
             {isSignUp && (
               <div>
-                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className="block text-sm font-medium mb-2 text-gray-700">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -1147,11 +1119,7 @@ function HomeContent() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      theme === 'dark' 
-                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                    }`}
+                    className="w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                     placeholder="Confirm your password"
                     required
                   />
@@ -1190,72 +1158,44 @@ function HomeContent() {
                 setPassword('');
                 setConfirmPassword('');
               }}
-              className={`text-sm font-medium ${
-                theme === 'dark' 
-                  ? 'text-blue-400 hover:text-blue-300' 
-                  : 'text-blue-600 hover:text-blue-500'
-              }`}
+              className="text-sm font-medium text-blue-600 hover:text-blue-500"
             >
               {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
             </button>
           </div>
           
-          {/* Theme toggle on login page */}
-          <div className="mt-6 flex justify-center">
-            <button 
-              onClick={toggleTheme}
-              className={`p-2 rounded-lg transition-colors ${
-                theme === 'dark' 
-                  ? 'text-yellow-400 hover:bg-gray-700' 
-                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-              }`}
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-          </div>
+
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className={`flex h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
+    <div className="flex h-screen bg-gray-50">
       {/* Discord-style Sidebar */}
-      <Sidebar onSelect={setActiveTab} theme={theme} />
+      <Sidebar onSelect={setActiveTab} />
       
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className={`${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-sm border-b px-6 py-4`}>
+        <header className="bg-white shadow-sm border-b px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h1 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>IITCohort</h1>
+              <h1 className="text-xl font-bold text-gray-900">IITCohort</h1>
               <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Beta</span>
             </div>
             <div className="flex items-center gap-4">
-              <button 
-                onClick={toggleTheme}
-                className={`p-2 rounded-lg transition-colors ${
-                  theme === 'dark' 
-                    ? 'text-yellow-400 hover:bg-gray-700' 
-                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                }`}
-                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              >
-                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
-              <button className={`p-2 ${theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-gray-600'}`}>
+              <button className="p-2 text-gray-400 hover:text-gray-600">
                 <Search className="w-5 h-5" />
               </button>
-              <button className={`p-2 ${theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-gray-600'}`}>
+              <button className="p-2 text-gray-400 hover:text-gray-600">
                 <Bell className="w-5 h-5" />
               </button>
-              <button className={`p-2 ${theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-gray-600'}`}>
+              <button className="p-2 text-gray-400 hover:text-gray-600">
                 <Settings className="w-5 h-5" />
               </button>
               <button 
-                className={`flex items-center gap-2 ${theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
                 onClick={() => signOut(auth)}
               >
                 <LogOut className="w-4 h-4" />
@@ -1269,10 +1209,10 @@ function HomeContent() {
         <main className="flex-1 overflow-auto p-6">
           {activeTab === 'dashboard' && (
             <div className="mb-6">
-              <h2 className={`text-2xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              <h2 className="text-2xl font-bold mb-2 text-gray-900">
                 Welcome back, {user.email}!
               </h2>
-              <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
+              <p className="text-gray-600">
                 Your smart collaboration hub for IIT batch projects and learning
               </p>
             </div>

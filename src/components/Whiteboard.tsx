@@ -194,7 +194,7 @@ export default function Whiteboard() {
           {/* Main Content Area */}
           <div className="flex flex-col flex-1 max-w-[1800px] min-w-0 min-h-0">
             {/* Top Menu Bar */}
-            <header className="flex items-center justify-between whitespace-nowrap border-b border-[#ebefed] px-10 py-3">
+            <header className="flex items-center justify-between whitespace-nowrap border-b border-[#ebefed] px-10 py-3 bg-white">
               <div className="flex items-center gap-4 text-[#121714]">
                 <div className="w-4 h-4">
                   <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
