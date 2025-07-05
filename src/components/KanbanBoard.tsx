@@ -162,7 +162,12 @@ function ProjectModal({ open, onClose, project, onSave }: { open: boolean, onClo
   );
 }
 
-export default function KanbanBoard() {
+type KanbanBoardProps = {
+  projectId?: string;
+  // ... (aur bhi props ho toh yahan likhein)
+};
+
+export default function KanbanBoard({ projectId }: KanbanBoardProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
