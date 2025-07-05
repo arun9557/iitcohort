@@ -52,59 +52,149 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
       { uid: '2', name: 'John Doe', status: 'online', role: 'member' },
       { uid: '3', name: 'Jane Smith', status: 'offline', role: 'member' },
       { uid: '4', name: 'Bob Wilson', status: 'online', role: 'member' },
+      { uid: '5', name: 'Alice Johnson', status: 'offline', role: 'member' },
+      { uid: '6', name: 'Charlie Brown', status: 'online', role: 'member' },
+      { uid: '7', name: 'Diana Prince', status: 'online', role: 'admin' },
+      { uid: '8', name: 'Eve Adams', status: 'offline', role: 'member' },
     ];
 
     return (
       <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-lg font-bold mb-4">Members (Demo)</h3>
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <span>👥</span>
+          All Members ({demoMembers.length})
+        </h3>
         <p className="text-sm text-gray-500 mb-4">Using demo data - enable Realtime Database for live updates</p>
-        <ul className="space-y-2">
-          {demoMembers.filter(m => m.role === 'admin').map(m => (
-            <li key={m.uid} className="flex items-center gap-2 font-semibold text-indigo-700">
-              <span>👑</span>
-              <span>{m.name} {m.uid === currentUserId && '(You)'}</span>
-              <span className={m.status === 'online' ? 'text-green-500' : 'text-gray-400'}>
-                ● {m.status}
-              </span>
-            </li>
-          ))}
-          {demoMembers.filter(m => m.role !== 'admin').map(m => (
-            <li key={m.uid} className="flex items-center gap-2">
-              <span>👤</span>
-              <span>{m.name} {m.uid === currentUserId && '(You)'}</span>
-              <span className={m.status === 'online' ? 'text-green-500' : 'text-gray-400'}>
-                ● {m.status}
-              </span>
-            </li>
-          ))}
-        </ul>
+        
+        {/* Online Members */}
+        <div className="mb-4">
+          <h4 className="text-sm font-semibold text-green-600 mb-2 flex items-center gap-1">
+            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+            Online ({demoMembers.filter(m => m.status === 'online').length})
+          </h4>
+          <ul className="space-y-2">
+            {demoMembers.filter(m => m.status === 'online' && m.role === 'admin').map(m => (
+              <li key={m.uid} className="flex items-center gap-3 p-2 rounded-lg bg-indigo-50 border border-indigo-100">
+                <span className="text-lg">👑</span>
+                <div className="flex-1">
+                  <span className="font-semibold text-indigo-700">{m.name}</span>
+                  {m.uid === currentUserId && <span className="text-xs text-indigo-500 ml-1">(You)</span>}
+                </div>
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              </li>
+            ))}
+            {demoMembers.filter(m => m.status === 'online' && m.role !== 'admin').map(m => (
+              <li key={m.uid} className="flex items-center gap-3 p-2 rounded-lg bg-green-50 border border-green-100">
+                <span className="text-lg">👤</span>
+                <div className="flex-1">
+                  <span className="font-medium text-gray-700">{m.name}</span>
+                  {m.uid === currentUserId && <span className="text-xs text-green-500 ml-1">(You)</span>}
+                </div>
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Offline Members */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-1">
+            <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+            Offline ({demoMembers.filter(m => m.status === 'offline').length})
+          </h4>
+          <ul className="space-y-2">
+            {demoMembers.filter(m => m.status === 'offline' && m.role === 'admin').map(m => (
+              <li key={m.uid} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 border border-gray-100 opacity-60">
+                <span className="text-lg">👑</span>
+                <div className="flex-1">
+                  <span className="font-semibold text-gray-600">{m.name}</span>
+                  {m.uid === currentUserId && <span className="text-xs text-gray-500 ml-1">(You)</span>}
+                </div>
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+              </li>
+            ))}
+            {demoMembers.filter(m => m.status === 'offline' && m.role !== 'admin').map(m => (
+              <li key={m.uid} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 border border-gray-100 opacity-60">
+                <span className="text-lg">👤</span>
+                <div className="flex-1">
+                  <span className="font-medium text-gray-500">{m.name}</span>
+                  {m.uid === currentUserId && <span className="text-xs text-gray-400 ml-1">(You)</span>}
+                </div>
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
-      <h3 className="text-lg font-bold mb-4">Members</h3>
-      <ul className="space-y-2">
-        {members.filter(m => m.role === 'admin').map(m => (
-          <li key={m.uid} className="flex items-center gap-2 font-semibold text-indigo-700">
-            <span>👑</span>
-            <span>{m.name} {m.uid === currentUserId && '(You)'}</span>
-            <span className={m.status === 'online' ? 'text-green-500' : 'text-gray-400'}>
-              ● {m.status}
-            </span>
-          </li>
-        ))}
-        {members.filter(m => m.role !== 'admin').map(m => (
-          <li key={m.uid} className="flex items-center gap-2">
-            <span>👤</span>
-            <span>{m.name} {m.uid === currentUserId && '(You)'}</span>
-            <span className={m.status === 'online' ? 'text-green-500' : 'text-gray-400'}>
-              ● {m.status}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+        <span>👥</span>
+        All Members ({members.length})
+      </h3>
+      
+      {/* Online Members */}
+      <div className="mb-4">
+        <h4 className="text-sm font-semibold text-green-600 mb-2 flex items-center gap-1">
+          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+          Online ({members.filter(m => m.status === 'online').length})
+        </h4>
+        <ul className="space-y-2">
+          {members.filter(m => m.status === 'online' && m.role === 'admin').map(m => (
+            <li key={m.uid} className="flex items-center gap-3 p-2 rounded-lg bg-indigo-50 border border-indigo-100">
+              <span className="text-lg">👑</span>
+              <div className="flex-1">
+                <span className="font-semibold text-indigo-700">{m.name}</span>
+                {m.uid === currentUserId && <span className="text-xs text-indigo-500 ml-1">(You)</span>}
+              </div>
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            </li>
+          ))}
+          {members.filter(m => m.status === 'online' && m.role !== 'admin').map(m => (
+            <li key={m.uid} className="flex items-center gap-3 p-2 rounded-lg bg-green-50 border border-green-100">
+              <span className="text-lg">👤</span>
+              <div className="flex-1">
+                <span className="font-medium text-gray-700">{m.name}</span>
+                {m.uid === currentUserId && <span className="text-xs text-green-500 ml-1">(You)</span>}
+              </div>
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Offline Members */}
+      <div>
+        <h4 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-1">
+          <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+          Offline ({members.filter(m => m.status === 'offline').length})
+        </h4>
+        <ul className="space-y-2">
+          {members.filter(m => m.status === 'offline' && m.role === 'admin').map(m => (
+            <li key={m.uid} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 border border-gray-100 opacity-60">
+              <span className="text-lg">👑</span>
+              <div className="flex-1">
+                <span className="font-semibold text-gray-600">{m.name}</span>
+                {m.uid === currentUserId && <span className="text-xs text-gray-500 ml-1">(You)</span>}
+              </div>
+              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+            </li>
+          ))}
+          {members.filter(m => m.status === 'offline' && m.role !== 'admin').map(m => (
+            <li key={m.uid} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 border border-gray-100 opacity-60">
+              <span className="text-lg">👤</span>
+              <div className="flex-1">
+                <span className="font-medium text-gray-500">{m.name}</span>
+                {m.uid === currentUserId && <span className="text-xs text-gray-400 ml-1">(You)</span>}
+              </div>
+              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 } 

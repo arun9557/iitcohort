@@ -2,7 +2,8 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
-import { getDatabase } from 'firebase/database';
+import { getDatabase, ref, set, update } from 'firebase/database';
+import type { User } from 'firebase/auth';
 
 // Firebase configuration using environment variables with fallback
 const firebaseConfig = {
@@ -49,6 +50,25 @@ try {
   realtimeDb = getDatabase(app);
 } catch (error) {
   console.warn('Realtime Database not available:', error);
+}
+
+// Helper to sync user to Realtime Database
+export function syncUserToDatabase(user: User) {
+  console.log('syncUserToDatabase called for:', user?.email);
+  if (!realtimeDb || !user) return;
+  set(ref(realtimeDb, 'users/' + user.uid), {
+    name: user.displayName || user.email,
+    status: 'online',
+    role: 'member', // You can customize this logic
+  });
+}
+
+// Helper to set user offline in Realtime Database
+export function setUserOffline(user: User) {
+  if (!realtimeDb || !user) return;
+  update(ref(realtimeDb, 'users/' + user.uid), {
+    status: 'offline',
+  });
 }
 
 export { realtimeDb };

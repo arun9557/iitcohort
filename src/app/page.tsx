@@ -38,7 +38,7 @@ import MemberList from '../components/MemberList';
 import RoomChat from '../components/RoomChat';
 import Library from '../components/Library';
 import KnimeOutput from '../components/KnimeOutput';
-import { auth, db } from "../firebase";
+import { auth, db, syncUserToDatabase, setUserOffline } from "../firebase";
 // import { getAnalytics } from "firebase/analytics"; // isko abhi comment kar dein
 
 interface ChatMessage {
@@ -422,7 +422,7 @@ const LecturesSection = ({ setActiveTab }: { setActiveTab: (tab: string) => void
 };
 
 const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => void }> = ({ messages, sendMessage, message, setMessage, setActiveTab }) => (
-  <div className="bg-white rounded-lg p-6 shadow-sm">
+  <div className="bg-white rounded-lg p-6 shadow-sm min-h-[500px] lg:min-h-[650px] h-full flex flex-col">
     <div className="flex items-center justify-between mb-4">
       <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
         <MessageCircle className="w-5 h-5 text-green-500" />
@@ -437,8 +437,8 @@ const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => 
         </button>
       </div>
     </div>
-    <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
-      {messages.slice(-5).map((msg, index) => (
+    <div className="space-y-3 mb-4 max-h-[400px] lg:max-h-[600px] overflow-y-auto flex-1">
+      {messages.slice(-20).map((msg, index) => (
         <div key={index} className="flex items-start gap-2">
           <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
             {msg.user.charAt(0).toUpperCase()}
@@ -890,11 +890,15 @@ function HomeContent() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+      if (user) {
+        syncUserToDatabase(user);
+      } else {
+        // If you want to set offline for previous user, you need to track previous user
+        // For now, this will only set offline if user logs out from this session
+      }
     });
     return () => unsubscribe();
   }, []);
-
-
 
   useEffect(() => {
     if (!user) return;
@@ -916,8 +920,6 @@ function HomeContent() {
     setMessage('');
   };
 
-
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -936,10 +938,14 @@ function HomeContent() {
     }
 
     try {
+      let userCredential;
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+      }
+      if (userCredential && userCredential.user) {
+        syncUserToDatabase(userCredential.user);
       }
       setEmail('');
       setPassword('');
@@ -955,11 +961,18 @@ function HomeContent() {
     }
   };
 
+  const handleLogout = async () => {
+    if (user) {
+      setUserOffline(user);
+    }
+    await signOut(auth);
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -980,6 +993,7 @@ function HomeContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
+              className="h-full"
             >
               <ChatSection 
                 messages={chatMessages}
@@ -1009,7 +1023,7 @@ function HomeContent() {
           </div>
         );
       case 'projects':
-        return <ProjectTable />;
+        return <KanbanBoard />;
       case 'kanban':
         return <KanbanBoard />;
       case 'meetings':
@@ -1196,7 +1210,7 @@ function HomeContent() {
               </button>
               <button 
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
-                onClick={() => signOut(auth)}
+                onClick={handleLogout}
               >
                 <LogOut className="w-4 h-4" />
                 Logout

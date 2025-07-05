@@ -9,17 +9,16 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
   Calendar, 
@@ -27,20 +26,21 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  GripVertical
+  GripVertical,
+  X
 } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'todo' | 'in-progress' | 'review' | 'done';
-  priority: 'low' | 'medium' | 'high';
+  status: 'not-started' | 'in-progress' | 'done';
   assignee: string;
   dueDate: string;
-  projectId?: string;
+  progress: number; // 0-100
+  notes?: string;
 }
 
 interface Column {
@@ -57,74 +57,35 @@ interface KanbanBoardProps {
 const initialTasks: Task[] = [
   {
     id: '1',
-    title: 'Design User Interface',
-    description: 'Create wireframes and mockups for the new feature',
-    priority: 'high',
-    assignee: 'Alice',
-    dueDate: '2024-01-15',
-    status: 'todo',
-    projectId: ''
+    title: 'Website turant',
+    description: 'Landing page and basic info',
+    assignee: 'Arun Shekhar',
+    dueDate: '2024-07-10',
+    status: 'not-started',
+    progress: 0,
   },
   {
     id: '2',
-    title: 'Implement Authentication',
-    description: 'Set up Firebase authentication with email and Google sign-in',
-    priority: 'high',
-    assignee: 'Bob',
-    dueDate: '2024-01-20',
+    title: 'INS first reel script',
+    description: 'Script for INS project',
+    assignee: 'Team',
+    dueDate: '2024-07-12',
     status: 'in-progress',
-    projectId: ''
+    progress: 20,
   },
   {
     id: '3',
-    title: 'Write Unit Tests',
-    description: 'Add comprehensive test coverage for core functionality',
-    priority: 'medium',
-    assignee: 'Charlie',
-    dueDate: '2024-01-25',
-    status: 'review',
-    projectId: ''
+    title: 'IIT COHORT',
+    description: 'Batch platform setup',
+    assignee: 'Arun Shekhar',
+    dueDate: '2024-07-15',
+    status: 'in-progress',
+    progress: 10,
   },
-  {
-    id: '4',
-    title: 'Deploy to Production',
-    description: 'Configure CI/CD pipeline and deploy the application',
-    priority: 'high',
-    assignee: 'David',
-    dueDate: '2024-01-30',
-    status: 'done',
-    projectId: ''
-  }
 ];
 
-const getPriorityIcon = (priority: string) => {
-  switch (priority) {
-    case 'high':
-      return <AlertCircle className="w-4 h-4 text-red-500" />;
-    case 'medium':
-      return <Clock className="w-4 h-4 text-yellow-500" />;
-    case 'low':
-      return <CheckCircle className="w-4 h-4 text-green-500" />;
-    default:
-      return null;
-  }
-};
-
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case 'high':
-      return 'bg-red-100 text-red-800';
-    case 'medium':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'low':
-      return 'bg-green-100 text-green-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
-
 // Sortable Task Component
-function SortableTask({ task }: { task: Task }) {
+function SortableTask({ task, onClick }: { task: Task, onClick: (task: Task) => void }) {
   const {
     attributes,
     listeners,
@@ -143,33 +104,97 @@ function SortableTask({ task }: { task: Task }) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`${isDragging ? 'opacity-50' : ''} bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-3 cursor-move`}
-      {...attributes}
-      {...listeners}
+      className={`${isDragging ? 'opacity-50' : ''} bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-3 cursor-pointer`}
+      onClick={() => onClick(task)}
     >
-      <div className="flex items-start justify-between mb-2">
-        <h4 className="font-medium text-sm">{task.title}</h4>
-        <div className="flex items-center gap-1">
-          {getPriorityIcon(task.priority)}
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-medium text-base">{task.title}</h4>
+        <span
+          className="cursor-grab"
+          {...attributes}
+          {...listeners}
+          onClick={e => e.stopPropagation()}
+        >
           <GripVertical className="w-4 h-4 text-gray-400" />
-        </div>
-      </div>
-      <p className="text-xs text-gray-600 mb-3 line-clamp-2">{task.description}</p>
-      <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          <User className="w-3 h-3 text-gray-500" />
-          <span className="text-gray-600">{task.assignee}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Calendar className="w-3 h-3 text-gray-500" />
-          <span className="text-gray-600">{task.dueDate}</span>
-        </div>
-      </div>
-      <div className="mt-2">
-        <span className={`inline-block px-2 py-1 rounded-full text-xs ${getPriorityColor(task.priority)}`}>
-          {task.priority}
         </span>
       </div>
+      <div className="flex items-center gap-2 mb-2 text-xs text-gray-600">
+        <User className="w-3 h-3 text-gray-500" />
+        <span>{task.assignee}</span>
+        <Calendar className="w-3 h-3 text-gray-500 ml-2" />
+        <span>{task.dueDate}</span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+        <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${task.progress}%` }}></div>
+      </div>
+      <div className="text-xs text-gray-500">Progress: {task.progress}%</div>
+    </div>
+  );
+}
+
+function KanbanColumn({ column, children }: { column: Column, children: React.ReactNode }) {
+  const { setNodeRef } = useDroppable({ id: column.id });
+  return (
+    <motion.div
+      ref={setNodeRef}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gray-50 rounded-lg p-4"
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Add Modal component
+function ProjectModal({ open, onClose, project, onSave }: { open: boolean, onClose: () => void, project: Task | null, onSave: (task: Task) => void }) {
+  const [edit, setEdit] = useState<Task | null>(project);
+  useEffect(() => { setEdit(project); }, [project]);
+  if (!open || !edit) return null;
+  return (
+    <div className="fixed inset-0 z-50 w-full h-full flex items-start justify-center bg-transparent">
+      <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.98, opacity: 0 }} className="bg-neutral-50 border border-gray-100 w-full h-full max-w-none max-h-none rounded-none shadow-2xl p-0 relative overflow-auto">
+        <button className="absolute top-6 right-6 text-gray-400 hover:text-gray-700 z-10" onClick={onClose}><X className="w-7 h-7" /></button>
+        <div className="px-12 pt-10 pb-2 max-w-3xl mx-auto">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl">🗂️</span>
+            <input className="bg-transparent text-3xl font-extrabold outline-none w-full" value={edit.title} onChange={e => setEdit({ ...edit, title: e.target.value })} />
+          </div>
+          <div className="text-gray-400 text-sm mb-6 border-b pb-4">Project Details</div>
+          <div className="space-y-7">
+            <div>
+              <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Description</div>
+              <textarea className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-blue-400 outline-none" rows={4} value={edit.description} onChange={e => setEdit({ ...edit, description: e.target.value })} placeholder="Describe this project..." />
+            </div>
+            <div className="flex gap-6">
+              <div className="flex-1">
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Status</div>
+                <select className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-blue-400 outline-none" value={edit.status} onChange={e => setEdit({ ...edit, status: e.target.value as Task['status'] })}>
+                  <option value="not-started">Not Started</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="done">Done</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Assignee</div>
+                <input className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-blue-400 outline-none" value={edit.assignee} onChange={e => setEdit({ ...edit, assignee: e.target.value })} placeholder="Who is responsible?" />
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Progress</div>
+              <input type="range" min={0} max={100} value={edit.progress} onChange={e => setEdit({ ...edit, progress: Number(e.target.value) })} className="w-full accent-blue-500" />
+              <div className="text-sm text-gray-500 mt-1">{edit.progress}%</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Notes</div>
+              <textarea className="w-full bg-gray-100 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-blue-400 outline-none" rows={3} value={edit.notes || ''} onChange={e => setEdit({ ...edit, notes: e.target.value })} placeholder="Add any notes or comments..." />
+            </div>
+          </div>
+          <div className="flex justify-end mt-10 mb-2">
+            <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow hover:from-blue-600 hover:to-blue-700 transition" onClick={() => { onSave(edit); onClose(); }}>Save</button>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -184,129 +209,103 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 
   const [columns, setColumns] = useState<Column[]>([
     {
-      id: 'todo',
-      title: 'To Do',
-      tasks: initialTasks.filter(task => task.status === 'todo'),
-      color: 'bg-gray-100'
+      id: 'not-started',
+      title: 'Not Started',
+      tasks: [],
+      color: 'bg-gray-100',
     },
     {
       id: 'in-progress',
       title: 'In Progress',
-      tasks: initialTasks.filter(task => task.status === 'in-progress'),
-      color: 'bg-blue-100'
-    },
-    {
-      id: 'review',
-      title: 'Review',
-      tasks: initialTasks.filter(task => task.status === 'review'),
-      color: 'bg-yellow-100'
+      tasks: [],
+      color: 'bg-blue-100',
     },
     {
       id: 'done',
       title: 'Done',
-      tasks: initialTasks.filter(task => task.status === 'done'),
-      color: 'bg-green-100'
-    }
+      tasks: [],
+      color: 'bg-green-100',
+    },
   ]);
   const [loading, setLoading] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
+  // Real-time Firestore sync
   useEffect(() => {
-    if (!projectId) return;
     setLoading(true);
     const q = query(collection(db, 'tasks'), orderBy('dueDate', 'asc'));
     const unsub = onSnapshot(q, (snapshot) => {
       const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
-      setTasks(fetched);
+      setColumns([
+        {
+          id: 'not-started',
+          title: 'Not Started',
+          tasks: fetched.filter(t => t.status === 'not-started'),
+          color: 'bg-gray-100',
+        },
+        {
+          id: 'in-progress',
+          title: 'In Progress',
+          tasks: fetched.filter(t => t.status === 'in-progress'),
+          color: 'bg-blue-100',
+        },
+        {
+          id: 'done',
+          title: 'Done',
+          tasks: fetched.filter(t => t.status === 'done'),
+          color: 'bg-green-100',
+        },
+      ]);
       setLoading(false);
     });
     return () => unsub();
-  }, [projectId]);
+  }, []);
 
-  useEffect(() => {
-    // Update columns when tasks change
-    setColumns([
-      {
-        id: 'todo',
-        title: 'To Do',
-        tasks: tasks.filter(t => t.status === 'todo'),
-        color: 'bg-gray-100',
-      },
-      {
-        id: 'in-progress',
-        title: 'In Progress',
-        tasks: tasks.filter(t => t.status === 'in-progress'),
-        color: 'bg-blue-100',
-      },
-      {
-        id: 'review',
-        title: 'Review',
-        tasks: tasks.filter(t => t.status === 'review'),
-        color: 'bg-yellow-100',
-      },
-      {
-        id: 'done',
-        title: 'Done',
-        tasks: tasks.filter(t => t.status === 'done'),
-        color: 'bg-green-100',
-      },
-    ]);
-  }, [tasks]);
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (active.id !== over?.id) {
-      setColumns((columns) => {
-        const oldIndex = columns.findIndex(col => 
-          col.tasks.some(task => task.id === active.id)
-        );
-        const newIndex = columns.findIndex(col => 
-          col.tasks.some(task => task.id === over?.id)
-        );
-
-        if (oldIndex !== -1 && newIndex !== -1) {
-          const newColumns = [...columns];
-          const sourceColumn = newColumns[oldIndex];
-          const destColumn = newColumns[newIndex];
-          
-          const taskIndex = sourceColumn.tasks.findIndex(task => task.id === active.id);
-          const task = sourceColumn.tasks[taskIndex];
-          
-          // Remove from source column
-          sourceColumn.tasks.splice(taskIndex, 1);
-          
-          // Add to destination column
-          destColumn.tasks.push(task);
-          
-          return newColumns;
-      }
-        
-        return columns;
-      });
-    }
-  };
-
-  const addTask = (columnId: string) => {
-    const newTask: Task = {
-      id: Date.now().toString(),
-      title: 'New Task',
-      description: 'Add description here',
-      priority: 'medium',
+  // Add new task to Firestore
+  const addTask = async (columnId: string) => {
+    const newTask: Omit<Task, 'id'> = {
+      title: 'New project',
+      description: '',
       assignee: 'Unassigned',
       dueDate: new Date().toISOString().split('T')[0],
-      status: columnId as 'todo' | 'in-progress' | 'review' | 'done',
-      projectId: projectId || ''
+      status: columnId as Task['status'],
+      progress: 0,
     };
-
-    setColumns(prev => prev.map(col => 
-      col.id === columnId 
-        ? { ...col, tasks: [...col.tasks, newTask] }
-        : col
-    ));
+    await addDoc(collection(db, 'tasks'), newTask);
   };
 
-  if (!projectId) return <div className="p-4 text-gray-500">No project selected.</div>;
+  // Update task in Firestore
+  const handleSaveTask = async (updated: Task) => {
+    const { id, ...fields } = updated;
+    await updateDoc(doc(db, 'tasks', id), fields);
+  };
+
+  // Drag-and-drop: update status in Firestore
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    if (active.id === over.id) return;
+    // Find the task and update its status
+    const allTasks = columns.flatMap(col => col.tasks);
+    const movedTask = allTasks.find(t => t.id === active.id);
+    if (!movedTask) return;
+    const destCol = columns.find(col => col.id === over.id);
+    if (!destCol) return;
+    const { id, ...fields } = movedTask;
+    await updateDoc(doc(db, 'tasks', id), { ...fields, status: destCol.id });
+  };
+
+  // Delete task (optional, not shown in UI yet)
+  const deleteTask = async (taskId: string) => {
+    await deleteDoc(doc(db, 'tasks', taskId));
+  };
+
+  const handleCardClick = (task: Task) => {
+    setSelectedTask(task);
+    setModalOpen(true);
+  };
+
   if (loading) return <div className="p-4 text-gray-500">Loading tasks...</div>;
 
   return (
@@ -327,36 +326,29 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
         onDragEnd={handleDragEnd}
       >
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {columns.map((column) => (
-              <motion.div
-                key={column.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-gray-50 rounded-lg p-4"
-              >
+              <KanbanColumn key={column.id} column={column}>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="font-medium text-gray-900">{column.title}</h4>
                   <span className="text-sm text-gray-500">{column.tasks.length}</span>
                 </div>
-
                 <SortableContext
                   items={column.tasks.map(task => task.id)}
                   strategy={verticalListSortingStrategy}
                 >
                   {column.tasks.map((task) => (
-                    <SortableTask key={task.id} task={task} />
+                    <SortableTask key={task.id} task={task} onClick={handleCardClick} />
                   ))}
                 </SortableContext>
-
                 <button
                   onClick={() => addTask(column.id)}
                   className="w-full mt-3 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition flex items-center justify-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  Add Task
+                  + New project
                 </button>
-              </motion.div>
+              </KanbanColumn>
             ))}
           </div>
         </div>
@@ -378,12 +370,6 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
             <div className="text-sm text-gray-600">In Progress</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">
-              {columns.find(col => col.id === 'review')?.tasks.length || 0}
-            </div>
-            <div className="text-sm text-gray-600">In Review</div>
-          </div>
-          <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
               {columns.find(col => col.id === 'done')?.tasks.length || 0}
             </div>
@@ -391,6 +377,10 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        <ProjectModal open={modalOpen} onClose={() => setModalOpen(false)} project={selectedTask} onSave={handleSaveTask} />
+      </AnimatePresence>
     </div>
   );
 } 
