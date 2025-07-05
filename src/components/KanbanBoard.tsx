@@ -26,7 +26,7 @@ import {
   GripVertical,
   X
 } from 'lucide-react';
-import { collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 interface Task {
@@ -45,10 +45,6 @@ interface Column {
   title: string;
   tasks: Task[];
   color: string;
-}
-
-interface KanbanBoardProps {
-  projectId?: string;
 }
 
 // Sortable Task Component

@@ -28,14 +28,14 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
         
         if (realtimeDb) {
           const membersRef = ref(realtimeDb, 'users');
-          const snapshot = await new Promise<any>((resolve) => {
+          const snapshot = await new Promise<unknown>((resolve) => {
             const unsubscribe = onValue(membersRef, (snapshot) => {
               unsubscribe();
               resolve(snapshot);
             });
           });
-          
-          const data = snapshot.val() || {};
+          // Type assertion for snapshot
+          const data = (snapshot as any).val ? (snapshot as any).val() || {} : {};
           Object.entries(data).forEach(([uid, info]: [string, unknown]) => {
             onlineUsers.set(uid, {
               status: (info as { status: string }).status,
