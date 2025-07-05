@@ -187,7 +187,9 @@ function AutoExpandTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElem
       ref.current.style.height = 'auto';
       ref.current.style.height = ref.current.scrollHeight + 'px';
     }
-    props.onInput && props.onInput(e);
+    if (props.onInput) {
+      props.onInput(e);
+    }
   }} />;
 }
 
