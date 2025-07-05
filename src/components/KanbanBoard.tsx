@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect } from 'react';
 import {
   DndContext,
@@ -164,7 +165,7 @@ function ProjectModal({ open, onClose, project, onSave }: { open: boolean, onClo
 
 type KanbanBoardProps = {
   projectId?: string;
-  // ... (aur bhi props ho toh yahan likhein)
+  // aur bhi props ho toh yahan likhein
 };
 
 export default function KanbanBoard({ projectId }: KanbanBoardProps) {
