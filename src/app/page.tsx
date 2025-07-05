@@ -31,7 +31,6 @@ import Whiteboard from '../components/Whiteboard';
 import KanbanBoard from '../components/KanbanBoard';
 import MeetingScheduler from '../components/MeetingScheduler';
 import NotesManager from '../components/NotesManager';
-import ProjectTable from '../components/ProjectTable';
 import Sidebar from '../components/Sidebar';
 import VoiceRoom from '../components/VoiceRoom';
 import MemberList from '../components/MemberList';

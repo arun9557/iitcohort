@@ -23,9 +23,6 @@ import {
   Plus, 
   Calendar, 
   User, 
-  Clock,
-  CheckCircle,
-  AlertCircle,
   GripVertical,
   X
 } from 'lucide-react';
@@ -53,36 +50,6 @@ interface Column {
 interface KanbanBoardProps {
   projectId?: string;
 }
-
-const initialTasks: Task[] = [
-  {
-    id: '1',
-    title: 'Website turant',
-    description: 'Landing page and basic info',
-    assignee: 'Arun Shekhar',
-    dueDate: '2024-07-10',
-    status: 'not-started',
-    progress: 0,
-  },
-  {
-    id: '2',
-    title: 'INS first reel script',
-    description: 'Script for INS project',
-    assignee: 'Team',
-    dueDate: '2024-07-12',
-    status: 'in-progress',
-    progress: 20,
-  },
-  {
-    id: '3',
-    title: 'IIT COHORT',
-    description: 'Batch platform setup',
-    assignee: 'Arun Shekhar',
-    dueDate: '2024-07-15',
-    status: 'in-progress',
-    progress: 10,
-  },
-];
 
 // Sortable Task Component
 function SortableTask({ task, onClick }: { task: Task, onClick: (task: Task) => void }) {
@@ -199,7 +166,7 @@ function ProjectModal({ open, onClose, project, onSave }: { open: boolean, onClo
   );
 }
 
-export default function KanbanBoard({ projectId }: KanbanBoardProps) {
+export default function KanbanBoard() {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -294,11 +261,6 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
     if (!destCol) return;
     const { id, ...fields } = movedTask;
     await updateDoc(doc(db, 'tasks', id), { ...fields, status: destCol.id });
-  };
-
-  // Delete task (optional, not shown in UI yet)
-  const deleteTask = async (taskId: string) => {
-    await deleteDoc(doc(db, 'tasks', taskId));
   };
 
   const handleCardClick = (task: Task) => {

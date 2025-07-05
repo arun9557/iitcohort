@@ -269,7 +269,9 @@ export default function NotesManager() {
     if (activeSidebar === 'labels' && labelFilter) return n.label === labelFilter && !n.trashed;
     return false;
   });
-  if (activeSidebar !== 'labels') setTimeout(() => setLabelFilter(null), 0);
+  useEffect(() => {
+    if (activeSidebar !== 'labels') setLabelFilter(null);
+  }, [activeSidebar]);
   if (search) {
     filteredNotes = filteredNotes.filter(
       (n) =>
