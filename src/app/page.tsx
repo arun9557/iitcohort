@@ -139,8 +139,8 @@ const ProjectsSection = ({ futureProjects, setActiveTab }: { futureProjects: Fut
         {/* Current Projects */}
         {projects.map((project) => (
           <div key={project.id} className={`p-3 rounded-lg border-l-4 ${getColorClasses(project.color)}`}>
-            <h4 className="font-medium">{project.title}</h4>
-            <p className="text-sm text-gray-600">{project.description}</p>
+            <h4 className="font-semibold text-gray-900">{project.title}</h4>
+            <p className="text-sm text-gray-800">{project.description}</p>
           </div>
         ))}
         
@@ -149,8 +149,8 @@ const ProjectsSection = ({ futureProjects, setActiveTab }: { futureProjects: Fut
           <div key={`future-${project.id}`} className={`p-3 rounded-lg border-l-4 ${getColorClasses(project.color)}`}>
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium">{project.title}</h4>
-                <p className="text-sm text-gray-600">{project.description}</p>
+                <h4 className="font-semibold text-gray-900">{project.title}</h4>
+                <p className="text-sm text-gray-800">{project.description}</p>
                 <div className="mt-2 flex gap-2">
                   {project.tags.map((tag, index) => (
                     <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
@@ -682,8 +682,8 @@ const FuturePlanningSection = ({
             className={`p-3 rounded-lg border-l-4 ${getColorClasses(project.color)} cursor-pointer hover:shadow-md transition-shadow`}
             onClick={() => handleProjectClick(project)}
           >
-            <h4 className="font-medium">{project.title}</h4>
-            <p className="text-sm text-gray-600">{project.description}</p>
+            <h4 className="font-semibold text-gray-900">{project.title}</h4>
+            <p className="text-sm text-gray-800">{project.description}</p>
             <div className="mt-2 flex gap-2">
               {project.tags.map((tag, index) => (
                 <span key={index} className={`${getTagColorClasses(project.color)} text-xs px-2 py-1 rounded`}>
