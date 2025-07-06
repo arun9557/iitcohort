@@ -309,17 +309,17 @@ const LecturesSection = ({ setActiveTab }: { setActiveTab: (tab: string) => void
         {lectures.map((lecture) => (
           <div key={lecture.id} className="p-3 rounded-lg border border-gray-200 hover:border-indigo-300 transition">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-sm">{lecture.title}</h4>
+              <h4 className="font-semibold text-sm text-gray-900">{lecture.title}</h4>
               <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded">{lecture.duration}</span>
             </div>
-            <p className="text-xs text-gray-600 mb-2">by {lecture.professor}</p>
+            <p className="text-xs text-gray-800 mb-2">by {lecture.professor}</p>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
                 className="bg-indigo-500 h-2 rounded-full transition-all duration-300" 
                 style={{ width: `${lecture.progress}%` }}
               ></div>
             </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <div className="flex justify-between text-xs text-gray-800 mt-1">
               <span>Progress</span>
               <span>{lecture.progress}%</span>
             </div>
@@ -444,7 +444,7 @@ const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => 
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-sm">{msg.user}</span>
+              <span className="font-semibold text-sm text-gray-900">{msg.user}</span>
               <span className="text-xs text-gray-500">
                 {msg.timestamp && typeof msg.timestamp === 'object' && typeof msg.timestamp.toDate === 'function'
                   ? msg.timestamp.toDate().toLocaleTimeString()
@@ -453,7 +453,7 @@ const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => 
                     : ''}
               </span>
             </div>
-            <p className="text-sm text-gray-700">{msg.text}</p>
+            <p className="text-sm text-gray-900">{msg.text}</p>
           </div>
         </div>
       ))}
