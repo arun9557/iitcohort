@@ -283,7 +283,7 @@ echo "Fibonacci(10) = " . fibonacci(10) . "\n";
             suggestOnTriggerCharacters: true,
             acceptSuggestionOnEnter: 'on',
             tabCompletion: 'on',
-            wordBasedSuggestions: true,
+            wordBasedSuggestions: 'allDocuments',
             parameterHints: { enabled: true },
             autoIndent: 'full',
             formatOnPaste: true,
