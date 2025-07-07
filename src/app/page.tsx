@@ -64,14 +64,6 @@ interface Project {
   color: string;
 }
 
-interface Lecture {
-  id: string;
-  title: string;
-  professor: string;
-  duration: string;
-  progress: number;
-}
-
 interface FutureProject {
   id: string;
   title: string;
@@ -1047,13 +1039,6 @@ function HomeContent() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleLogout = async () => {
-    if (user) {
-      setUserOffline(user);
-    }
-    await signOut(auth);
   };
 
   const renderTabContent = () => {
