@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User, createUserWithEmailAndPassword } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, User, createUserWithEmailAndPassword } from 'firebase/auth';
 import { collection, addDoc, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { 
@@ -38,8 +38,8 @@ import MemberList from '../components/MemberList';
 import RoomChat from '../components/RoomChat';
 import Library from '../components/Library';
 import KnimeOutput from '../components/KnimeOutput';
-import { auth, db, syncUserToDatabase, setUserOffline } from "../firebase";
 import VSCodeSelector from "../components/VSCodeSelector";
+import { auth, db, syncUserToDatabase } from "../firebase";
 // import { getAnalytics } from "firebase/analytics"; // isko abhi comment kar dein
 
 interface ChatMessage {
