@@ -959,7 +959,6 @@ function HomeContent() {
 
   // Add notification function
   const addNotification = (message: string) => {
-    const id = Date.now().toString();
     setNotifications(prev => [...prev, message]);
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n !== message));
