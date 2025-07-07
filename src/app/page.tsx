@@ -25,7 +25,9 @@ import {
   Mail,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  Menu,
+  ChevronLeft
 } from 'lucide-react';
 import Whiteboard from '../components/Whiteboard';
 import KanbanBoard from '../components/KanbanBoard';
@@ -38,6 +40,10 @@ import RoomChat from '../components/RoomChat';
 import Library from '../components/Library';
 import KnimeOutput from '../components/KnimeOutput';
 import { auth, db, syncUserToDatabase, setUserOffline } from "../firebase";
+import VSCodeEditor from "../components/VSCodeEditor";
+import AdvancedVSCode from "../components/AdvancedVSCode";
+import MonacoVSCode from "../components/MonacoVSCode";
+import VSCodeSelector from "../components/VSCodeSelector";
 // import { getAnalytics } from "firebase/analytics"; // isko abhi comment kar dein
 
 interface ChatMessage {
@@ -80,6 +86,17 @@ interface FutureProject {
   color: string;
 }
 
+interface Activity {
+  id: string;
+  type: 'project' | 'message' | 'file' | 'meeting';
+  user: string;
+  action: string;
+  target: string;
+  time: string;
+  icon: string;
+  color: string;
+}
+
 // Feature components
 const ProjectsSection = ({ futureProjects, setActiveTab }: { futureProjects: FutureProject[], setActiveTab: (tab: string) => void }) => {
   const [projects, setProjects] = useState<Project[]>([
@@ -114,69 +131,89 @@ const ProjectsSection = ({ futureProjects, setActiveTab }: { futureProjects: Fut
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
-          <Users className="w-5 h-5 text-blue-500" />
-          Projects Discussion
-        </h3>
+    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <Users className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Projects Discussion</h3>
+            <p className="text-sm text-gray-500">Manage your team projects</p>
+          </div>
+        </div>
         <div className="flex gap-2">
           <button 
-            className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition"
+            className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-all duration-200 shadow-sm"
             onClick={() => setShowAddModal(true)}
           >
             <Plus className="w-4 h-4" />
           </button>
           <button 
-            className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition text-sm"
+            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-200 text-sm font-medium shadow-sm"
             onClick={() => setActiveTab('projects')}
           >
             View All
           </button>
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* Current Projects */}
         {projects.map((project) => (
-          <div key={project.id} className={`p-3 rounded-lg border-l-4 ${getColorClasses(project.color)}`}>
-            <h4 className="font-semibold text-gray-900">{project.title}</h4>
-            <p className="text-sm text-gray-800">{project.description}</p>
+          <div key={project.id} className={`p-4 rounded-xl border-l-4 ${getColorClasses(project.color)} hover:shadow-md transition-all duration-200 cursor-pointer`}>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 mb-1">{project.title}</h4>
+                <p className="text-sm text-gray-600">{project.description}</p>
+                <div className="mt-2">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    project.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                    project.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {project.status}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         ))}
         
         {/* Future Projects */}
         {futureProjects.map((project) => (
-          <div key={`future-${project.id}`} className={`p-3 rounded-lg border-l-4 ${getColorClasses(project.color)}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-semibold text-gray-900">{project.title}</h4>
-                <p className="text-sm text-gray-800">{project.description}</p>
-                <div className="mt-2 flex gap-2">
+          <div key={`future-${project.id}`} className={`p-4 rounded-xl border-l-4 ${getColorClasses(project.color)} hover:shadow-md transition-all duration-200 cursor-pointer`}>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 mb-1">{project.title}</h4>
+                <p className="text-sm text-gray-600 mb-2">{project.description}</p>
+                <div className="flex items-center gap-2 mb-2">
                   {project.tags.map((tag, index) => (
-                    <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                    <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded-lg text-xs font-medium">
                       {tag}
                     </span>
                   ))}
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">Future</span>
+                  <span className="text-xs text-gray-500">👥 {project.members} members</span>
+                </div>
               </div>
-              <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Future</span>
             </div>
           </div>
         ))}
       </div>
       
       {/* Quick Actions */}
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="flex gap-2">
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="grid grid-cols-2 gap-3">
           <button 
             onClick={() => setActiveTab('projects')}
-            className="flex-1 bg-blue-50 text-blue-700 py-2 px-3 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
+            className="bg-blue-50 text-blue-700 py-3 px-4 rounded-lg hover:bg-blue-100 transition-all duration-200 text-sm font-medium border border-blue-200"
           >
             📁 All Projects
           </button>
           <button 
-            onClick={() => setActiveTab('kanban')}
-            className="flex-1 bg-purple-50 text-purple-700 py-2 px-3 rounded-lg hover:bg-purple-100 transition text-sm font-medium"
+            className="bg-purple-50 text-purple-700 py-3 px-4 rounded-lg hover:bg-purple-100 transition-all duration-200 text-sm font-medium border border-purple-200"
           >
             📋 Kanban Board
           </button>
@@ -284,61 +321,68 @@ const LecturesSection = ({ setActiveTab }: { setActiveTab: (tab: string) => void
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
-          <BookOpen className="w-5 h-5 text-indigo-500" />
-          Lecture Content
-        </h3>
+    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+            <BookOpen className="w-5 h-5 text-indigo-600" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Lecture Content</h3>
+            <p className="text-sm text-gray-500">Track your learning progress</p>
+          </div>
+        </div>
         <div className="flex gap-2">
           <button 
-            className="bg-indigo-500 text-white p-2 rounded-lg hover:bg-indigo-600 transition"
+            className="bg-indigo-500 text-white p-2 rounded-lg hover:bg-indigo-600 transition-all duration-200 shadow-sm"
             onClick={() => setShowAddModal(true)}
           >
             <Plus className="w-4 h-4" />
           </button>
           <button 
-            className="bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 transition text-sm"
+            className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 text-sm font-medium shadow-sm"
             onClick={() => setActiveTab('library')}
           >
             View All
           </button>
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {lectures.map((lecture) => (
-          <div key={lecture.id} className="p-3 rounded-lg border border-gray-200 hover:border-indigo-300 transition">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold text-sm text-gray-900">{lecture.title}</h4>
-              <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded">{lecture.duration}</span>
+          <div key={lecture.id} className="p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200 cursor-pointer">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold text-gray-900">{lecture.title}</h4>
+              <span className="text-xs bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-medium">{lecture.duration}</span>
             </div>
-            <p className="text-xs text-gray-800 mb-2">by {lecture.professor}</p>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-indigo-500 h-2 rounded-full transition-all duration-300" 
-                style={{ width: `${lecture.progress}%` }}
-              ></div>
-            </div>
-            <div className="flex justify-between text-xs text-gray-800 mt-1">
-              <span>Progress</span>
-              <span>{lecture.progress}%</span>
+            <p className="text-sm text-gray-600 mb-3">by {lecture.professor}</p>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Progress</span>
+                <span className="font-medium">{lecture.progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2.5 rounded-full transition-all duration-300 shadow-sm" 
+                  style={{ width: `${lecture.progress}%` }}
+                ></div>
+              </div>
             </div>
           </div>
         ))}
       </div>
       
       {/* Quick Actions */}
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="flex gap-2">
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="grid grid-cols-2 gap-3">
           <button 
             onClick={() => setActiveTab('library')}
-            className="flex-1 bg-indigo-50 text-indigo-700 py-2 px-3 rounded-lg hover:bg-indigo-100 transition text-sm font-medium"
+            className="bg-indigo-50 text-indigo-700 py-3 px-4 rounded-lg hover:bg-indigo-100 transition-all duration-200 text-sm font-medium border border-indigo-200"
           >
             📚 Library
           </button>
           <button 
             onClick={() => setActiveTab('notes')}
-            className="flex-1 bg-green-50 text-green-700 py-2 px-3 rounded-lg hover:bg-green-100 transition text-sm font-medium"
+            className="bg-green-50 text-green-700 py-3 px-4 rounded-lg hover:bg-green-100 transition-all duration-200 text-sm font-medium border border-green-200"
           >
             📝 Notes
           </button>
@@ -421,74 +465,62 @@ const LecturesSection = ({ setActiveTab }: { setActiveTab: (tab: string) => void
 };
 
 const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => void }> = ({ messages, sendMessage, message, setMessage, setActiveTab }) => (
-  <div className="bg-white rounded-lg p-6 shadow-sm min-h-[500px] lg:min-h-[650px] h-full flex flex-col">
-    <div className="flex items-center justify-between mb-4">
-      <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
-        <MessageCircle className="w-5 h-5 text-green-500" />
-        Quick Chat
-      </h3>
+  <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 min-h-[500px] lg:min-h-[650px] h-full flex flex-col">
+    <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+          <MessageCircle className="w-5 h-5 text-green-600" />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-gray-900">Quick Chat</h3>
+          <p className="text-sm text-gray-500">Real-time communication</p>
+        </div>
+      </div>
       <div className="flex gap-2">
         <button 
-          className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition text-sm"
+          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-200 text-sm font-medium shadow-sm"
           onClick={() => setActiveTab('members')}
         >
           View All
         </button>
       </div>
     </div>
-    <div className="space-y-3 mb-4 max-h-[400px] lg:max-h-[600px] overflow-y-auto flex-1">
+    <div className="space-y-4 mb-6 max-h-[400px] lg:max-h-[600px] overflow-y-auto flex-1">
       {messages.slice(-20).map((msg, index) => (
-        <div key={index} className="flex items-start gap-2">
-          <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
+        <div key={index} className="flex items-start gap-3">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-sm">
             {msg.user.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm text-gray-900">{msg.user}</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-medium text-sm text-gray-900">{msg.user}</span>
               <span className="text-xs text-gray-500">
-                {msg.timestamp && typeof msg.timestamp === 'object' && typeof msg.timestamp.toDate === 'function'
-                  ? msg.timestamp.toDate().toLocaleTimeString()
-                  : (typeof msg.timestamp === 'string' || typeof msg.timestamp === 'number')
-                    ? new Date(msg.timestamp).toLocaleTimeString()
-                    : ''}
+                {msg.timestamp?.toDate().toLocaleTimeString() || 'Now'}
               </span>
             </div>
-            <p className="text-sm text-gray-900">{msg.text}</p>
+            <div className="bg-gray-50 rounded-lg p-3">
+              <p className="text-sm text-gray-800">{msg.text}</p>
+            </div>
           </div>
         </div>
       ))}
     </div>
-    <div className="flex gap-2 mb-4">
-      <input
-        type="text"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="Type a message..."
-        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-      />
-      <button
-        onClick={sendMessage}
-        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition text-sm"
-      >
-        Send
-      </button>
-    </div>
-    
-    {/* Quick Actions */}
-    <div className="pt-4 border-t border-gray-200">
-      <div className="flex gap-2">
-        <button 
-          onClick={() => setActiveTab('members')}
-          className="flex-1 bg-green-50 text-green-700 py-2 px-3 rounded-lg hover:bg-green-100 transition text-sm font-medium"
+    <div className="border-t border-gray-200 pt-4">
+      <div className="flex gap-3">
+        <input
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+          placeholder="Type your message..."
+          className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        />
+        <button
+          onClick={sendMessage}
+          disabled={!message.trim()}
+          className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
         >
-          🧑‍🤝‍🧑 Members
-        </button>
-        <button 
-          onClick={() => setActiveTab('voice')}
-          className="flex-1 bg-blue-50 text-blue-700 py-2 px-3 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
-        >
-          🎤 Voice Chat
+          Send
         </button>
       </div>
     </div>
@@ -513,58 +545,72 @@ const LibrarySection = ({ setActiveTab }: { setActiveTab: (tab: string) => void 
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
-          <BookOpen className="w-5 h-5 text-purple-500" />
-          Recent Library Files
-        </h3>
+    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+            <BookOpen className="w-5 h-5 text-purple-600" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Recent Library Files</h3>
+            <p className="text-sm text-gray-500">Shared resources & documents</p>
+          </div>
+        </div>
         <button 
-          className="text-purple-500 hover:text-purple-700 text-sm font-medium"
+          className="text-purple-600 hover:text-purple-700 text-sm font-medium hover:bg-purple-50 px-3 py-1 rounded-lg transition-all duration-200"
           onClick={() => setActiveTab('library')}
         >
           View All
         </button>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {recentFiles.map((file) => (
-          <div key={file.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition">
+          <div key={file.id} className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer border border-transparent hover:border-gray-200">
             <div className="flex-shrink-0">
-              {getFileIcon(file.type)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-sm text-gray-900 truncate">{file.title}</h4>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span>{file.size}</span>
-                <span>•</span>
-                <span>{file.uploadedBy}</span>
-                <span>•</span>
-                <span>{file.date}</span>
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                {getFileIcon(file.type)}
               </div>
             </div>
-            <button className="text-purple-500 hover:text-purple-700">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-sm text-gray-900 truncate mb-1">{file.title}</h4>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
+                  {file.size}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
+                  {file.uploadedBy}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
+                  {file.date}
+                </span>
+              </div>
+            </div>
+            <button className="text-purple-500 hover:text-purple-700 hover:bg-purple-50 p-2 rounded-lg transition-all duration-200">
               <Download className="w-4 h-4" />
             </button>
           </div>
         ))}
       </div>
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="flex items-center justify-between text-sm mb-3">
-          <span className="text-gray-600">Total Files: 127</span>
-          <span className="text-gray-600">Storage: 2.3 GB</span>
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="flex items-center justify-between text-sm mb-4">
+          <span className="text-gray-600 font-medium">Total Files: 127</span>
+          <span className="text-gray-600 font-medium">Storage: 2.3 GB</span>
         </div>
         
         {/* Quick Actions */}
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <button 
             onClick={() => setActiveTab('library')}
-            className="flex-1 bg-purple-50 text-purple-700 py-2 px-3 rounded-lg hover:bg-purple-100 transition text-sm font-medium"
+            className="bg-purple-50 text-purple-700 py-3 px-4 rounded-lg hover:bg-purple-100 transition-all duration-200 text-sm font-medium border border-purple-200"
           >
             📚 Full Library
           </button>
           <button 
             onClick={() => setActiveTab('notes')}
-            className="flex-1 bg-green-50 text-green-700 py-2 px-3 rounded-lg hover:bg-green-100 transition text-sm font-medium"
+            className="bg-green-50 text-green-700 py-3 px-4 rounded-lg hover:bg-green-100 transition-all duration-200 text-sm font-medium border border-green-200"
           >
             📝 Notes
           </button>
@@ -662,65 +708,66 @@ const FuturePlanningSection = ({
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
-          <Lightbulb className="w-5 h-5 text-yellow-500" />
-          Future Projects
-        </h3>
+    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+            <Lightbulb className="w-5 h-5 text-yellow-600" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Future Projects</h3>
+            <p className="text-sm text-gray-500">Plan upcoming initiatives</p>
+          </div>
+        </div>
         <button 
-          className="bg-yellow-500 text-white p-2 rounded-lg hover:bg-yellow-600 transition"
+          className="bg-yellow-500 text-white p-2 rounded-lg hover:bg-yellow-600 transition-all duration-200 shadow-sm"
           onClick={() => setShowAddModal(true)}
         >
           <Plus className="w-4 h-4" />
         </button>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {futureProjects.map((project) => (
           <div 
             key={project.id} 
-            className={`p-3 rounded-lg border-l-4 ${getColorClasses(project.color)} cursor-pointer hover:shadow-md transition-shadow`}
+            className={`p-4 rounded-xl border-l-4 ${getColorClasses(project.color)} cursor-pointer hover:shadow-md transition-all duration-200`}
             onClick={() => handleProjectClick(project)}
           >
-            <h4 className="font-semibold text-gray-900">{project.title}</h4>
-            <p className="text-sm text-gray-800">{project.description}</p>
-            <div className="mt-2 flex gap-2">
-              {project.tags.map((tag, index) => (
-                <span key={index} className={`${getTagColorClasses(project.color)} text-xs px-2 py-1 rounded`}>
-                  {tag}
-                </span>
-              ))}
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 mb-1">{project.title}</h4>
+                <p className="text-sm text-gray-600 mb-3">{project.description}</p>
+                <div className="flex items-center gap-3 mb-2">
+                  {project.tags.map((tag, index) => (
+                    <span key={index} className={`${getTagColorClasses(project.color)} text-xs px-2 py-1 rounded-lg font-medium`}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span>👥 {project.members} members</span>
+                  <span>📅 {project.phase}</span>
+                </div>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-6 pt-4 border-t border-gray-200">
+      <div className="mt-6 pt-6 border-t border-gray-200">
         <div className="grid grid-cols-2 gap-3">
           <button 
             onClick={() => setActiveTab('projects')}
-            className="bg-blue-50 text-blue-700 py-2 px-3 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
+            className="bg-yellow-50 text-yellow-700 py-3 px-4 rounded-lg hover:bg-yellow-100 transition-all duration-200 text-sm font-medium border border-yellow-200"
           >
             📁 All Projects
           </button>
           <button 
             onClick={() => setActiveTab('kanban')}
-            className="bg-purple-50 text-purple-700 py-2 px-3 rounded-lg hover:bg-purple-100 transition text-sm font-medium"
+            className="bg-purple-50 text-purple-700 py-3 px-4 rounded-lg hover:bg-purple-100 transition-all duration-200 text-sm font-medium border border-purple-200"
           >
             📋 Kanban Board
-          </button>
-          <button 
-            onClick={() => setActiveTab('meetings')}
-            className="bg-green-50 text-green-700 py-2 px-3 rounded-lg hover:bg-green-100 transition text-sm font-medium"
-          >
-             Meetings
-          </button>
-          <button 
-            onClick={() => setActiveTab('whiteboard')}
-            className="bg-orange-50 text-orange-700 py-2 px-3 rounded-lg hover:bg-orange-100 transition text-sm font-medium"
-          >
-            🎨 Whiteboard
           </button>
         </div>
       </div>
@@ -850,10 +897,207 @@ const FuturePlanningSection = ({
   );
 };
 
+const ActivityFeed = () => {
+  const activities: Activity[] = [
+    {
+      id: '1',
+      type: 'project',
+      user: 'Arun Kumar',
+      action: 'created a new project',
+      target: 'Machine Learning Assignment',
+      time: '2 minutes ago',
+      icon: '📁',
+      color: 'blue'
+    },
+    {
+      id: '2',
+      type: 'message',
+      user: 'Priya Sharma',
+      action: 'sent a message in',
+      target: 'General Chat',
+      time: '5 minutes ago',
+      icon: '💬',
+      color: 'green'
+    },
+    {
+      id: '3',
+      type: 'file',
+      user: 'Rahul Patel',
+      action: 'uploaded a file',
+      target: 'lecture_notes.pdf',
+      time: '10 minutes ago',
+      icon: '📄',
+      color: 'purple'
+    },
+    {
+      id: '4',
+      type: 'meeting',
+      user: 'Dr. Kumar',
+      action: 'scheduled a meeting',
+      target: 'Project Review',
+      time: '15 minutes ago',
+      icon: '📅',
+      color: 'orange'
+    }
+  ];
+
+  const getColorClasses = (color: string) => {
+    const colors = {
+      blue: 'bg-blue-100 text-blue-800',
+      green: 'bg-green-100 text-green-800',
+      purple: 'bg-purple-100 text-purple-800',
+      orange: 'bg-orange-100 text-orange-800'
+    };
+    return colors[color as keyof typeof colors] || colors.blue;
+  };
+
+  return (
+    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+            <span className="text-2xl">📊</span>
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Activity Feed</h3>
+            <p className="text-sm text-gray-500">Recent team activities</p>
+          </div>
+        </div>
+        <button className="text-orange-600 hover:text-orange-700 text-sm font-medium hover:bg-orange-50 px-3 py-1 rounded-lg transition-all duration-200">
+          View All
+        </button>
+      </div>
+      
+      <div className="space-y-4">
+        {activities.map((activity) => (
+          <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+            <div className={`w-8 h-8 ${getColorClasses(activity.color)} rounded-lg flex items-center justify-center text-sm`}>
+              {activity.icon}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-gray-900">
+                <span className="font-medium">{activity.user}</span>
+                <span className="text-gray-600"> {activity.action} </span>
+                <span className="font-medium text-gray-900">{activity.target}</span>
+              </p>
+              <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="grid grid-cols-2 gap-3">
+          <button className="bg-orange-50 text-orange-700 py-3 px-4 rounded-lg hover:bg-orange-100 transition-all duration-200 text-sm font-medium border border-orange-200">
+            📊 All Activities
+          </button>
+          <button className="bg-blue-50 text-blue-700 py-3 px-4 rounded-lg hover:bg-blue-100 transition-all duration-200 text-sm font-medium border border-blue-200">
+            🔔 Notifications
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const QuickActions = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
+  const actions = [
+    {
+      title: 'Join Voice Chat',
+      icon: '🎤',
+      color: 'blue',
+      action: () => setActiveTab('voice'),
+      description: 'Start voice communication'
+    },
+    {
+      title: 'Create Note',
+      icon: '📝',
+      color: 'green',
+      action: () => setActiveTab('notes'),
+      description: 'Write quick notes'
+    },
+    {
+      title: 'Open Whiteboard',
+      icon: '🎨',
+      color: 'purple',
+      action: () => setActiveTab('whiteboard'),
+      description: 'Collaborative drawing'
+    },
+    {
+      title: 'Schedule Meeting',
+      icon: '📅',
+      color: 'orange',
+      action: () => setActiveTab('meetings'),
+      description: 'Plan team meetings'
+    },
+    {
+      title: 'Upload File',
+      icon: '📁',
+      color: 'indigo',
+      action: () => setActiveTab('library'),
+      description: 'Share documents'
+    },
+    {
+      title: 'VS Code',
+      icon: '🖥️',
+      color: 'gray',
+      action: () => setActiveTab('vscode'),
+      description: 'Code together'
+    }
+  ];
+
+  const getColorClasses = (color: string) => {
+    const colors = {
+      blue: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
+      green: 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100',
+      purple: 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100',
+      orange: 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100',
+      indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100',
+      gray: 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+    };
+    return colors[color as keyof typeof colors] || colors.blue;
+  };
+
+  return (
+    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+            <span className="text-white text-lg">⚡</span>
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Quick Actions</h3>
+            <p className="text-sm text-gray-500">Access tools instantly</p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3">
+        {actions.map((action, index) => (
+          <button
+            key={index}
+            onClick={action.action}
+            className={`p-4 rounded-xl border transition-all duration-200 ${getColorClasses(action.color)} group`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{action.icon}</span>
+              <div className="text-left">
+                <p className="font-semibold text-sm">{action.title}</p>
+                <p className="text-xs opacity-75">{action.description}</p>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // Main component wrapped with Suspense to handle the workStore error
 function HomeContent() {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(true); // Sidebar toggle state
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [futureProjects, setFutureProjects] = useState<FutureProject[]>([
@@ -885,12 +1129,26 @@ function HomeContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [authError, setAuthError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [notifications, setNotifications] = useState<string[]>([]);
+
+  // Add state for VS Code tab selection
+  const [vsTab, setVsTab] = useState<'advanced' | 'monaco'>('advanced');
+
+  // Add notification function
+  const addNotification = (message: string) => {
+    const id = Date.now().toString();
+    setNotifications(prev => [...prev, message]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n !== message));
+    }, 5000);
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (user) {
         syncUserToDatabase(user);
+        addNotification(`Welcome back, ${user.email?.split('@')[0]}! 👋`);
       } else {
         // If you want to set offline for previous user, you need to track previous user
         // For now, this will only set offline if user logs out from this session
@@ -971,51 +1229,140 @@ function HomeContent() {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <ProjectsSection futureProjects={futureProjects} setActiveTab={setActiveTab} />
-            </motion.div>
+          <div className="space-y-8">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Active Projects</p>
+                    <p className="text-2xl font-bold text-gray-900">12</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <span className="text-2xl">📁</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Team Members</p>
+                    <p className="text-2xl font-bold text-gray-900">24</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <span className="text-2xl">👥</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Meetings Today</p>
+                    <p className="text-2xl font-bold text-gray-900">3</p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <span className="text-2xl">📅</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Files Shared</p>
+                    <p className="text-2xl font-bold text-gray-900">47</p>
+                  </div>
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <span className="text-2xl">📚</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Main Content Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="lg:col-span-2"
+              >
+                <ProjectsSection futureProjects={futureProjects} setActiveTab={setActiveTab} />
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <ChatSection 
+                  messages={chatMessages}
+                  sendMessage={sendMessage}
+                  message={message}
+                  setMessage={setMessage}
+                  setActiveTab={setActiveTab}
+                />
+              </motion.div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+              >
+                <ChatSection 
+                  messages={chatMessages}
+                  sendMessage={sendMessage}
+                  message={message}
+                  setMessage={setMessage}
+                  setActiveTab={setActiveTab}
+                />
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+              >
+                <LibrarySection setActiveTab={setActiveTab} />
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9 }}
+              >
+                <QuickActions setActiveTab={setActiveTab} />
+              </motion.div>
+            </div>
             
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <LecturesSection setActiveTab={setActiveTab} />
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="h-full"
-            >
-              <ChatSection 
-                messages={chatMessages}
-                sendMessage={sendMessage}
-                message={message}
-                setMessage={setMessage}
-                setActiveTab={setActiveTab}
-              />
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <LibrarySection setActiveTab={setActiveTab} />
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="md:col-span-2 lg:col-span-3"
+              transition={{ delay: 1.0 }}
             >
               <FuturePlanningSection setActiveTab={setActiveTab} futureProjects={futureProjects} setFutureProjects={setFutureProjects} />
             </motion.div>
@@ -1036,8 +1383,16 @@ function HomeContent() {
       case 'voice':
         return (
           <div className="space-y-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-bold mb-4">Voice Chat Room</h2>
+            <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">🎤</span>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Voice Chat Room</h2>
+                  <p className="text-gray-600">Real-time voice communication with your team</p>
+                </div>
+              </div>
               <VoiceRoom roomName="IITJodhpurBatchVoiceRoom" />
             </div>
           </div>
@@ -1045,9 +1400,17 @@ function HomeContent() {
       case 'members':
         return (
           <div className="space-y-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h2 className="text-xl font-bold mb-4">Room Chat</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">👥</span>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Team Communication</h2>
+                  <p className="text-gray-600">Chat with team members and manage discussions</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                   <RoomChat roomId="main-room" currentUser={user?.email || 'Anonymous'} />
                 </div>
@@ -1060,6 +1423,38 @@ function HomeContent() {
         );
       case 'knime':
         return <KnimeOutput />;
+      case 'vscode':
+        return (
+          <div className="flex flex-col h-full w-full">
+            {/* Top Tab Bar */}
+            <div className="flex items-center h-12 bg-[#181a20] border-b border-[#23272e] px-2 gap-1 select-none">
+              <button
+                onClick={() => setVsTab('advanced')}
+                className={`px-6 py-2 rounded-t-md text-sm font-semibold transition-all duration-200 border-b-2 focus:outline-none ${
+                  vsTab === 'advanced'
+                    ? 'bg-[#181a20] text-white border-[#2563eb]'
+                    : 'bg-transparent text-gray-400 border-transparent hover:text-white'
+                }`}
+              >
+                Online VS Code
+              </button>
+              <button
+                onClick={() => setVsTab('monaco')}
+                className={`px-6 py-2 rounded-t-md text-sm font-semibold transition-all duration-200 border-b-2 focus:outline-none ${
+                  vsTab === 'monaco'
+                    ? 'bg-[#181a20] text-white border-[#2563eb]'
+                    : 'bg-transparent text-gray-400 border-transparent hover:text-white'
+                }`}
+              >
+                Monaco Editor
+              </button>
+            </div>
+            {/* Editor Area */}
+            <VSCodeSelector selectedOption={vsTab} />
+          </div>
+        );
+      case 'activity':
+        return <ActivityFeed />;
       default:
         return null;
     }
@@ -1184,55 +1579,116 @@ function HomeContent() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Discord-style Sidebar */}
-      <Sidebar onSelect={setActiveTab} />
-      
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Sidebar */}
+      <div className={`transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-0'} overflow-hidden`}> 
+        <Sidebar onSelect={setActiveTab} />
+      </div>
+      {/* Sidebar Toggle Button */}
+      <button
+        className="mr-2 p-2 bg-white shadow rounded-full border border-gray-200 hover:bg-gray-100 transition"
+        onClick={() => setSidebarOpen((open) => !open)}
+        aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+      >
+        {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </button>
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarOpen ? 'ml-0' : 'ml-0'}`}> 
         {/* Header */}
-        <header className="bg-white shadow-sm border-b px-6 py-4">
+        <header className="bg-white shadow-lg border-b border-gray-200 px-8 py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-gray-900">IITCohort</h1>
-              <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Beta</span>
-            </div>
             <div className="flex items-center gap-4">
-              <button className="p-2 text-gray-400 hover:text-gray-600">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white text-lg font-bold">I</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">IITCohort</h1>
+                <p className="text-sm text-gray-500">Smart Collaboration Platform</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Activity Feed Button */}
+              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors relative">
+                <div className="w-5 h-5 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs">📊</span>
+                </div>
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+              </button>
+              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                 <Search className="w-5 h-5" />
               </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600">
+              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors relative">
                 <Bell className="w-5 h-5" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
               </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600">
+              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                 <Settings className="w-5 h-5" />
               </button>
-              <button 
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
-                onClick={handleLogout}
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
+              <div className="w-px h-6 bg-gray-300"></div>
+              {/* User Profile Dropdown */}
+              <div className="relative group">
+                <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user.email?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="font-medium">{user.email?.split('@')[0]}</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {/* Dropdown Menu */}
+              </div>
             </div>
           </div>
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-8">
           {activeTab === 'dashboard' && (
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900">
-                Welcome back, {user.email}!
-              </h2>
-              <p className="text-gray-600">
-                Your smart collaboration hub for IIT batch projects and learning
-              </p>
+            <div className="mb-8">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white mb-6">
+                <h2 className="text-3xl font-bold mb-2">
+                  Welcome back, {user.email?.split('@')[0]}! 👋
+                </h2>
+                <p className="text-blue-100 text-lg">
+                  Your smart collaboration hub for IIT batch projects and learning
+                </p>
+              </div>
             </div>
           )}
           
           {renderTabContent()}
         </main>
+
+        {/* Notification Toasts */}
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          {notifications.map((notification, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: 300 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 300 }}
+              className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 max-w-sm"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-green-600">✓</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">{notification}</p>
+                </div>
+                <button
+                  onClick={() => setNotifications(prev => prev.filter((_, i) => i !== index))}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </div>
   );
