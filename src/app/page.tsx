@@ -16,7 +16,6 @@ import {
   Search,
   Bell,
   Settings,
-  LogOut,
   X,
   Video,
   Image,
@@ -40,9 +39,6 @@ import RoomChat from '../components/RoomChat';
 import Library from '../components/Library';
 import KnimeOutput from '../components/KnimeOutput';
 import { auth, db, syncUserToDatabase, setUserOffline } from "../firebase";
-import VSCodeEditor from "../components/VSCodeEditor";
-import AdvancedVSCode from "../components/AdvancedVSCode";
-import MonacoVSCode from "../components/MonacoVSCode";
 import VSCodeSelector from "../components/VSCodeSelector";
 // import { getAnalytics } from "firebase/analytics"; // isko abhi comment kar dein
 
@@ -283,171 +279,6 @@ const ProjectsSection = ({ futureProjects, setActiveTab }: { futureProjects: Fut
                   onClick={addProject}
                 >
                   Add Project
-                </button>
-                <button
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition"
-                  onClick={() => setShowAddModal(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const LecturesSection = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
-  const [lectures, setLectures] = useState<Lecture[]>([
-    { id: '1', title: 'Data Structures & Algorithms', professor: 'Dr. Sharma', duration: '2 hours', progress: 75 },
-    { id: '2', title: 'Machine Learning Basics', professor: 'Prof. Patel', duration: '1.5 hours', progress: 45 },
-    { id: '3', title: 'Database Management', professor: 'Dr. Kumar', duration: '3 hours', progress: 90 }
-  ]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newLecture, setNewLecture] = useState({ title: '', professor: '', duration: '', progress: 0 });
-
-  const addLecture = () => {
-    if (newLecture.title.trim() && newLecture.professor.trim()) {
-      const lecture: Lecture = {
-        id: Date.now().toString(),
-        ...newLecture
-      };
-      setLectures([...lectures, lecture]);
-      setNewLecture({ title: '', professor: '', duration: '', progress: 0 });
-      setShowAddModal(false);
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-            <BookOpen className="w-5 h-5 text-indigo-600" />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-gray-900">Lecture Content</h3>
-            <p className="text-sm text-gray-500">Track your learning progress</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            className="bg-indigo-500 text-white p-2 rounded-lg hover:bg-indigo-600 transition-all duration-200 shadow-sm"
-            onClick={() => setShowAddModal(true)}
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-          <button 
-            className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-all duration-200 text-sm font-medium shadow-sm"
-            onClick={() => setActiveTab('library')}
-          >
-            View All
-          </button>
-        </div>
-      </div>
-      <div className="space-y-4">
-        {lectures.map((lecture) => (
-          <div key={lecture.id} className="p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200 cursor-pointer">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-gray-900">{lecture.title}</h4>
-              <span className="text-xs bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-medium">{lecture.duration}</span>
-            </div>
-            <p className="text-sm text-gray-600 mb-3">by {lecture.professor}</p>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Progress</span>
-                <span className="font-medium">{lecture.progress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2.5 rounded-full transition-all duration-300 shadow-sm" 
-                  style={{ width: `${lecture.progress}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {/* Quick Actions */}
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <div className="grid grid-cols-2 gap-3">
-          <button 
-            onClick={() => setActiveTab('library')}
-            className="bg-indigo-50 text-indigo-700 py-3 px-4 rounded-lg hover:bg-indigo-100 transition-all duration-200 text-sm font-medium border border-indigo-200"
-          >
-            📚 Library
-          </button>
-          <button 
-            onClick={() => setActiveTab('notes')}
-            className="bg-green-50 text-green-700 py-3 px-4 rounded-lg hover:bg-green-100 transition-all duration-200 text-sm font-medium border border-green-200"
-          >
-            📝 Notes
-          </button>
-        </div>
-      </div>
-
-      {/* Add Lecture Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Add New Lecture</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-gray-500 hover:text-gray-700">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lecture Title</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  value={newLecture.title}
-                  onChange={(e) => setNewLecture({...newLecture, title: e.target.value})}
-                  placeholder="Enter lecture title"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Professor</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  value={newLecture.professor}
-                  onChange={(e) => setNewLecture({...newLecture, professor: e.target.value})}
-                  placeholder="Enter professor name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
-                <input
-                  type="text"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  value={newLecture.duration}
-                  onChange={(e) => setNewLecture({...newLecture, duration: e.target.value})}
-                  placeholder="e.g., 2 hours"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Progress (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  value={newLecture.progress}
-                  onChange={(e) => setNewLecture({...newLecture, progress: parseInt(e.target.value) || 0})}
-                  placeholder="0-100"
-                />
-              </div>
-              <div className="flex gap-2 pt-4">
-                <button
-                  className="flex-1 bg-indigo-500 text-white py-2 px-4 rounded-lg hover:bg-indigo-600 transition"
-                  onClick={addLecture}
-                >
-                  Add Lecture
                 </button>
                 <button
                   className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition"
