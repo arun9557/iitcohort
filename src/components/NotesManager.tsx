@@ -133,7 +133,12 @@ function MasonryGrid({ notes, onEdit, onArchive, onDelete, onRestore, onPin, onR
           onClick={() => onEdit(note)}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-lg text-gray-900">{note.title}</span>
+            <span className="font-semibold text-lg text-gray-900">
+              {note.title}
+              {isOwner(note.ownerId) && (
+                <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">Owner</span>
+              )}
+            </span>
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
               {!note.archived && !note.trashed && (
                 <button onClick={() => onPin(note)} title="Pin" className="text-gray-500 hover:text-yellow-600"><FaThumbtack /></button>
@@ -192,6 +197,23 @@ function AutoExpandTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElem
     }
   }} />;
 }
+
+const ownerUsernames = [
+  'arun2061292007',
+  'arunshekhram',
+  'meettomar07',
+  'ashishkrs1977',
+  'shubham229177',
+];
+const isOwner = (user: string) => {
+  if (!user) return false;
+  if (ownerUsernames.includes(user)) return true;
+  if (user.includes('@')) {
+    const uname = user.split('@')[0];
+    if (ownerUsernames.includes(uname)) return true;
+  }
+  return false;
+};
 
 export default function NotesManager() {
   const [activeSidebar, setActiveSidebar] = useState<string>('notes');
@@ -338,7 +360,7 @@ export default function NotesManager() {
       <aside className="w-56 bg-white border-r border-gray-200 flex flex-col py-6 px-2">
         <nav className="flex flex-col gap-2">
           {sidebarItems.map((item) => (
-            <button
+          <button
               key={item.key}
               className={`flex items-center gap-3 px-4 py-2 rounded-lg text-left transition-all duration-150 ${activeSidebar === item.key ? 'bg-gray-100 text-yellow-600' : 'hover:bg-gray-50 text-gray-700'}`}
               onClick={() => setActiveSidebar(item.key)}
@@ -393,27 +415,27 @@ export default function NotesManager() {
             onReminder={handleReminder}
           />
         </main>
-      </div>
+        </div>
 
       {/* Floating New Note Button */}
-      <button
+                    <button
         className="fixed bottom-8 right-8 bg-yellow-400 text-gray-900 rounded-full shadow-lg p-4 flex items-center gap-2 hover:bg-yellow-300 transition-all z-50"
         onClick={() => setShowNew(true)}
       >
         <FaPlus /> New Note
-      </button>
+                    </button>
 
       {/* Edit Note Modal */}
       {editNote && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-200">
-            <input
+                    <input
               className="w-full bg-transparent border-b border-gray-300 text-gray-900 text-lg font-bold mb-2 outline-none"
               value={editNote.title}
               onChange={(e) => setEditNote({ ...editNote, title: e.target.value } as Note)}
               placeholder="Title"
-            />
-            <textarea
+                    />
+                    <textarea
               className="w-full bg-transparent border-b border-gray-300 text-gray-800 mb-2 outline-none min-h-[60px]"
               value={editNote.body}
               onChange={(e) => setEditNote({ ...editNote, body: e.target.value } as Note)}
@@ -433,14 +455,14 @@ export default function NotesManager() {
               </select>
               {/* Color preview dot */}
               <span className={`w-4 h-4 rounded-full border border-gray-300 ${editNote.color}`}></span>
-            </div>
+                      </div>
             <div className="flex justify-end gap-2 mt-4">
-              <button
+                      <button
                 className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
                 onClick={() => setEditNote(null)}
-              >
-                Cancel
-              </button>
+                      >
+                        Cancel
+                      </button>
               <button
                 className="px-4 py-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 font-semibold"
                 onClick={() => handleSaveEdit(editNote)}
@@ -457,9 +479,9 @@ export default function NotesManager() {
         <div className="fixed inset-0 z-50 w-full h-full flex items-start justify-center bg-transparent">
           <div className="bg-white w-full h-full max-w-none max-h-none rounded-none shadow-2xl p-0 relative overflow-auto flex items-center justify-center">
             <div className="w-full max-w-2xl mx-auto p-12">
-              <input
+                <input
                 className="w-full bg-transparent border-b border-gray-300 text-gray-900 text-2xl font-bold mb-4 outline-none"
-                value={newNote.title}
+                  value={newNote.title}
                 onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
                 placeholder="Title"
               />
@@ -498,7 +520,7 @@ export default function NotesManager() {
                   <span>Public</span>
                 </label>
                 <label className="flex items-center gap-1">
-                  <input
+                <input
                     type="radio"
                     name="visibility"
                     value="private"
@@ -509,19 +531,19 @@ export default function NotesManager() {
                 </label>
               </div>
               <div className="flex justify-end gap-2 mt-6">
-                <button
+              <button
                   className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
                   onClick={() => setShowNew(false)}
-                >
-                  Cancel
-                </button>
-                <button
+              >
+                Cancel
+              </button>
+              <button
                   className="px-4 py-2 rounded bg-yellow-400 text-gray-900 hover:bg-yellow-300 font-semibold"
                   onClick={handleAddNote}
                   disabled={!newNote.title.trim() || !currentUser}
-                >
+              >
                   Add
-                </button>
+              </button>
               </div>
             </div>
           </div>
@@ -529,4 +551,4 @@ export default function NotesManager() {
       )}
     </div>
   );
-}
+} 

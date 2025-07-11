@@ -153,7 +153,7 @@ const Library: React.FC = () => {
               
               {/* Tab Navigation */}
               <div className="flex items-center gap-2">
-                <button
+            <button
                   onClick={() => setActiveTab('library')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === 'library'
@@ -162,8 +162,8 @@ const Library: React.FC = () => {
                   }`}
                 >
                   Library
-                </button>
-                <button
+            </button>
+          <button
                   onClick={() => setActiveTab('upload')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === 'upload'
@@ -173,8 +173,8 @@ const Library: React.FC = () => {
                 >
                   <Upload className="w-4 h-4 inline mr-1" />
                   Upload
-                </button>
-                <button
+          </button>
+          <button
                   onClick={() => setActiveTab('files')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === 'files'
@@ -184,9 +184,9 @@ const Library: React.FC = () => {
                 >
                   <FolderOpen className="w-4 h-4 inline mr-1" />
                   Files
-                </button>
-              </div>
-            </div>
+          </button>
+        </div>
+      </div>
 
             {/* Tab Content */}
             {activeTab === 'library' && (
@@ -198,12 +198,12 @@ const Library: React.FC = () => {
                   <div className="text-[#677183] flex border-none bg-[#f1f2f4] items-center justify-center pl-4 rounded-l-xl border-r-0">
                     <Search className="w-6 h-6" />
                   </div>
-                  <input
+              <input
                     placeholder="Search for resources"
                     className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#121417] focus:outline-0 focus:ring-0 border-none bg-[#f1f2f4] focus:border-none h-full placeholder:text-[#677183] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
                 </div>
               </label>
             </div>
@@ -226,7 +226,7 @@ const Library: React.FC = () => {
                 {showCategoryDropdown && (
                   <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-48">
                     {categories.map((category) => (
-                      <button
+            <button
                         key={category}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm"
                         onClick={() => {
@@ -235,12 +235,12 @@ const Library: React.FC = () => {
                         }}
                       >
                         {category}
-                      </button>
+            </button>
                     ))}
-                  </div>
+          </div>
                 )}
               </div>
-
+              
               {/* File Types Dropdown */}
               <div className="relative">
                 <button 
@@ -264,10 +264,10 @@ const Library: React.FC = () => {
                         {type}
                       </button>
                     ))}
-                  </div>
+              </div>
                 )}
               </div>
-
+              
               {/* Sort Dropdown */}
               <div className="relative">
                 <button 
@@ -294,8 +294,8 @@ const Library: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
-
+              </div>
+              
             {/* Recently Uploaded */}
             <h2 className="text-[#121417] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Recently Uploaded</h2>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4">
@@ -314,7 +314,7 @@ const Library: React.FC = () => {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
 
             {/* Resources */}
             <h2 className="text-[#121417] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Resources</h2>
@@ -370,15 +370,15 @@ const Library: React.FC = () => {
                   </button>
                 ))}
                 
-                <button 
+          <button
                   className="flex size-10 items-center justify-center disabled:opacity-50"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                >
+          >
                   <ChevronRight className="w-[18px] h-[18px] text-[#121417]" />
-                </button>
-              </div>
-            )}
+          </button>
+        </div>
+      )}
 
             {/* Summary */}
             <h2 className="text-[#121417] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Summary</h2>
@@ -395,7 +395,7 @@ const Library: React.FC = () => {
                 <p className="text-[#121417] text-base font-medium leading-normal">Most Popular Tags</p>
                 <p className="text-[#121417] tracking-light text-2xl font-bold leading-tight">Computer Science, Math, Literature</p>
               </div>
-            </div>
+              </div>
               </>
             )}
 
@@ -438,7 +438,7 @@ const Library: React.FC = () => {
                 <FileManager />
               </div>
             )}
-          </div>
+            </div>
         </div>
       </div>
     </div>
