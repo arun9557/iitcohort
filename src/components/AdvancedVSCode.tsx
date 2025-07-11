@@ -108,7 +108,7 @@ export default function AdvancedVSCode() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#181a20] font-sans">
+    <div className="h-full min-h-0 flex flex-col flex-1 bg-[#181a20] font-sans" style={{height: '100%', minHeight: 0}}>
       {/* Provider Bar */}
       <div className="flex items-center justify-between px-0 py-0 bg-[#181a20]" style={{minHeight: 0}}>
         {/* Providers */}
@@ -169,11 +169,13 @@ export default function AdvancedVSCode() {
       {/* VS Code Container */}
       <div
         ref={containerRef}
-        className="flex-1 relative bg-[#181a20]"
+        className="flex-1 min-h-0 relative bg-[#181a20]"
         style={{
           borderRadius: 0,
           overflow: "hidden",
           border: "none",
+          height: '100%',
+          minHeight: 0
         }}
       >
         {isLoading && (
@@ -195,8 +197,8 @@ export default function AdvancedVSCode() {
         <iframe
           src={currentConfig?.url}
           title={currentConfig?.name}
-          className="w-full h-full border-0"
-          style={{ minHeight: 0, minWidth: 0, background: '#181a20' }}
+          className="w-full h-full min-h-0 min-w-0 border-0"
+          style={{ minHeight: 0, minWidth: 0, background: '#181a20', height: '100%' }}
           onLoad={handleIframeLoad}
           onError={handleIframeError}
           allowFullScreen

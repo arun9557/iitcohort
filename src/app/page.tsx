@@ -4,7 +4,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, User, createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, addDoc, onSnapshot, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, Timestamp, getCountFromServer, where } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { 
   Users, 
@@ -965,6 +965,67 @@ function HomeContent() {
     }, 5000);
   };
 
+  // Live dashboard stats
+  const [projectCount, setProjectCount] = useState<number | null>(null);
+  const [memberCount, setMemberCount] = useState<number | null>(null);
+  const [meetingCount, setMeetingCount] = useState<number | null>(null);
+  const [fileCount, setFileCount] = useState<number | null>(null);
+
+  // Fetch project count
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'projects'), snap => {
+      setProjectCount(snap.size);
+    });
+    return () => unsub();
+  }, []);
+
+  // Fetch member count
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'users'), snap => {
+      setMemberCount(snap.size);
+    });
+    return () => unsub();
+  }, []);
+
+  // Fetch file count
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'files'), snap => {
+      setFileCount(snap.size);
+    });
+    return () => unsub();
+  }, []);
+
+  // Fetch today's meetings count
+  useEffect(() => {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const q = query(
+      collection(db, 'meetings'),
+      where('date', '>=', Timestamp.fromDate(today)),
+      where('date', '<', Timestamp.fromDate(tomorrow))
+    );
+    const unsub = onSnapshot(q, snap => {
+      setMeetingCount(snap.size);
+    });
+    return () => unsub();
+  }, []);
+
+  // DEBUG: Log users and meetings collection data
+  useEffect(() => {
+    const unsubUsers = onSnapshot(collection(db, 'users'), snap => {
+      console.log('USERS COLLECTION:', snap.docs.map(doc => doc.data()));
+    });
+    const unsubMeetings = onSnapshot(collection(db, 'meetings'), snap => {
+      console.log('MEETINGS COLLECTION:', snap.docs.map(doc => doc.data()));
+    });
+    return () => {
+      unsubUsers();
+      unsubMeetings();
+    };
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
@@ -1056,7 +1117,7 @@ function HomeContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Active Projects</p>
-                    <p className="text-2xl font-bold text-gray-900">12</p>
+                    <p className="text-2xl font-bold text-gray-900">{projectCount !== null ? projectCount : '...'}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <span className="text-2xl">📁</span>
@@ -1073,7 +1134,7 @@ function HomeContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Team Members</p>
-                    <p className="text-2xl font-bold text-gray-900">24</p>
+                    <p className="text-2xl font-bold text-gray-900">{memberCount !== null ? memberCount : '...'}</p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <span className="text-2xl">👥</span>
@@ -1090,7 +1151,7 @@ function HomeContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Meetings Today</p>
-                    <p className="text-2xl font-bold text-gray-900">3</p>
+                    <p className="text-2xl font-bold text-gray-900">{meetingCount !== null ? meetingCount : '...'}</p>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                     <span className="text-2xl">📅</span>
@@ -1107,7 +1168,7 @@ function HomeContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Files Shared</p>
-                    <p className="text-2xl font-bold text-gray-900">47</p>
+                    <p className="text-2xl font-bold text-gray-900">{fileCount !== null ? fileCount : '...'}</p>
                   </div>
                   <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
                     <span className="text-2xl">📚</span>
@@ -1240,7 +1301,7 @@ function HomeContent() {
         return <KnimeOutput />;
       case 'vscode':
         return (
-          <div className="flex flex-col h-full w-full">
+          <div className="flex flex-col flex-1 min-h-0 h-full w-full overflow-hidden" style={{padding: 0, margin: 0}}>
             {/* Top Tab Bar */}
             <div className="flex items-center h-12 bg-[#181a20] border-b border-[#23272e] px-2 gap-1 select-none">
               <button
@@ -1265,7 +1326,9 @@ function HomeContent() {
               </button>
             </div>
             {/* Editor Area */}
-            <VSCodeSelector selectedOption={vsTab} />
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <VSCodeSelector selectedOption={vsTab} />
+            </div>
           </div>
         );
       case 'activity':
@@ -1394,23 +1457,25 @@ function HomeContent() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Sidebar */}
-      <div className={`transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-0'} overflow-hidden`}> 
-        <Sidebar onSelect={setActiveTab} />
+      <div className={`transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}`}
+           style={{ minWidth: sidebarOpen ? 256 : 0 }}>
+        <Sidebar onSelect={setActiveTab} activeTab={activeTab} />
       </div>
-      {/* Sidebar Toggle Button */}
-      <button
-        className="mr-2 p-2 bg-white shadow rounded-full border border-gray-200 hover:bg-gray-100 transition"
-        onClick={() => setSidebarOpen((open) => !open)}
-        aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-      >
-        {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
       {/* Main Content Area */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarOpen ? 'ml-0' : 'ml-0'}`}> 
+      <div className="flex-1 flex flex-col">
+        {/* Toggle Sidebar Button */}
+        <button
+          className="absolute top-4 left-4 z-50 bg-white border border-gray-300 rounded-full p-2 shadow hover:bg-gray-100 transition-all"
+          onClick={() => setSidebarOpen(open => !open)}
+          style={{ left: sidebarOpen ? 272 : 16, transition: 'left 0.3s' }}
+          title={sidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
+        >
+          {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
         {/* Header */}
-        <header className="bg-white shadow-lg border-b border-gray-200 px-8 py-6">
+        <header className="bg-white/80 glass-card shadow-lg border-b border-white/30 px-8 py-6 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
@@ -1458,25 +1523,34 @@ function HomeContent() {
             </div>
           </div>
         </header>
-
         {/* Main Content */}
-        <main className="flex-1 overflow-auto p-8">
-          {activeTab === 'dashboard' && (
-            <div className="mb-8">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white mb-6">
-                <h2 className="text-3xl font-bold mb-2">
-                  Welcome back, {user.email?.split('@')[0]}! 👋
-                </h2>
-                <p className="text-blue-100 text-lg">
-                  Your smart collaboration hub for IIT batch projects and learning
-                </p>
-              </div>
+        <main
+          className={
+            activeTab === 'vscode'
+              ? 'flex-1 overflow-hidden p-0'
+              : 'flex-1 overflow-auto p-8'
+          }
+        >
+          {activeTab === 'vscode' ? (
+            renderTabContent()
+          ) : (
+            <div className="glass-card shadow-xl p-8 mb-8">
+              {activeTab === 'dashboard' && (
+                <div className="mb-8">
+                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white mb-6">
+                    <h2 className="text-3xl font-bold mb-2">
+                      Welcome back, {user.email?.split('@')[0]}! 👋
+                    </h2>
+                    <p className="text-blue-100 text-lg">
+                      Your smart collaboration hub for IIT batch projects and learning
+                    </p>
+                  </div>
+                </div>
+              )}
+              {renderTabContent()}
             </div>
           )}
-          
-          {renderTabContent()}
         </main>
-
         {/* Notification Toasts */}
         <div className="fixed top-4 right-4 z-50 space-y-2">
           {notifications.map((notification, index) => (
@@ -1511,10 +1585,6 @@ function HomeContent() {
 
 // Tab configuration moved to component usage
 
-export default function Home() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <HomeContent />
-    </Suspense>
-  );
+export default function Page() {
+  return <HomeContent />;
 }

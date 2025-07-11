@@ -1,297 +1,582 @@
-'use client';
+"use client";
+import React, { useRef, useState, useEffect } from "react";
 
-import React, { useRef, useState } from 'react';
-
-// Types for drawing objects
-interface PenObject {
-  type: 'pen';
-  points: [number, number][];
-}
-interface RectObject {
-  type: 'rect';
-  start: [number, number];
-  end: [number, number];
-}
-interface CircleObject {
-  type: 'circle';
-  start: [number, number];
-  end: [number, number];
-}
-interface ArrowObject {
-  type: 'arrow';
-  start: [number, number];
-  end: [number, number];
-}
-interface TextObject {
-  type: 'text';
-  pos: [number, number];
-  text: string;
-}
-type DrawObject = PenObject | RectObject | CircleObject | ArrowObject | TextObject;
-
-type ToolKey = 'pen' | 'rect' | 'circle' | 'arrow' | 'text' | 'eraser';
-
-const tools = [
-  { name: 'Pen', key: 'pen', icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM51.31,160l90.35-90.35,16.68,16.69L68,176.68ZM48,179.31,76.69,208H48Zm48,25.38L79.31,188l90.35-90.35h0l16.68,16.69Z" /></svg>
-  ) },
-  { name: 'Rectangle', key: 'rect', icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200Z" /></svg>
-  ) },
-  { name: 'Circle', key: 'circle', icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z" /></svg>
-  ) },
-  { name: 'Arrow', key: 'arrow', icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z" /></svg>
-  ) },
-  { name: 'Text', key: 'text', icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M170.48,115.7A44,44,0,0,0,140,40H72a8,8,0,0,0-8,8V200a8,8,0,0,0,8,8h80a48,48,0,0,0,18.48-92.3ZM80,56h60a28,28,0,0,1,0,56H80Zm72,136H80V128h72a32,32,0,0,1,0,64Z" /></svg>
-  ) },
-  { name: 'Eraser', key: 'eraser', icon: (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M225,80.4,183.6,39a24,24,0,0,0-33.94,0L31,157.66a24,24,0,0,0,0,33.94l30.06,30.06A8,8,0,0,0,66.74,224H216a8,8,0,0,0,0-16h-84.7L225,114.34A24,24,0,0,0,225,80.4ZM108.68,208H70.05L42.33,180.28a8,8,0,0,1,0-11.31L96,115.31,148.69,168Zm105-105L160,156.69,107.31,104,161,50.34a8,8,0,0,1,11.32,0l41.38,41.38a8,8,0,0,1,0,11.31Z" /></svg>
-  ) },
+const DEFAULT_PEN_COLOR = "#222";
+const COLOR_PALETTE = ["#222", "#e11d48", "#2563eb", "#059669", "#f59e42", "#fbbf24", "#fff", "#000"];
+const TOOLS = [
+  { key: 'pen', label: 'Pen', icon: '✏️', shortcut: 'P', tooltip: 'Freehand drawing (P)' },
+  { key: 'eraser', label: 'Eraser', icon: '🧽', shortcut: 'E', tooltip: 'Erase (E)' },
+  { key: 'line', label: 'Line', icon: '📏', shortcut: 'L', tooltip: 'Draw line (L)' },
+  { key: 'rect', label: 'Rectangle', icon: '▭', shortcut: 'R', tooltip: 'Draw rectangle (R)' },
+  { key: 'circle', label: 'Circle', icon: '⚪', shortcut: 'C', tooltip: 'Draw circle (C)' },
+  { key: 'text', label: 'Text', icon: '🔤', shortcut: 'T', tooltip: 'Add text (T)' },
 ];
 
-function getSvgElement(obj: DrawObject) {
-  if (obj.type === 'pen') {
-    return <polyline points={obj.points.map((p) => p.join(',')).join(' ')} fill="none" stroke="#222" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />;
-  }
-  if (obj.type === 'rect') {
-    const [x, y] = obj.start;
-    const [x2, y2] = obj.end;
-    return <rect x={Math.min(x, x2)} y={Math.min(y, y2)} width={Math.abs(x2 - x)} height={Math.abs(y2 - y)} fill="none" stroke="#222" strokeWidth={2} rx={8} />;
-  }
-  if (obj.type === 'circle') {
-    const [x, y] = obj.start;
-    const [x2, y2] = obj.end;
-    const r = Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2);
-    return <circle cx={x} cy={y} r={r} fill="none" stroke="#222" strokeWidth={2} />;
-  }
-  if (obj.type === 'arrow') {
-    const [x, y] = obj.start;
-    const [x2, y2] = obj.end;
-    const angle = Math.atan2(y2 - y, x2 - x);
-    const headlen = 12;
-    const arrowX = x2 - headlen * Math.cos(angle - Math.PI / 6);
-    const arrowY = y2 - headlen * Math.sin(angle - Math.PI / 6);
-    const arrowX2 = x2 - headlen * Math.cos(angle + Math.PI / 6);
-    const arrowY2 = y2 - headlen * Math.sin(angle + Math.PI / 6);
-    return (
-      <g>
-        <line x1={x} y1={y} x2={x2} y2={y2} stroke="#222" strokeWidth={2} markerEnd="url(#arrowhead)" />
-        <polygon points={`${x2},${y2} ${arrowX},${arrowY} ${arrowX2},${arrowY2}`} fill="#222" />
-      </g>
-    );
-  }
-  if (obj.type === 'text') {
-    return <text x={obj.pos[0]} y={obj.pos[1]} fontSize={20} fill="#222">{obj.text}</text>;
-  }
-  return null;
-}
+type Tool = 'pen' | 'eraser' | 'line' | 'rect' | 'circle' | 'text';
 
 export default function Whiteboard() {
-  const [activeTool, setActiveTool] = useState<ToolKey>('pen');
-  const [drawing, setDrawing] = useState(false);
-  const [objects, setObjects] = useState<DrawObject[]>([]);
-  const [current, setCurrent] = useState<DrawObject | null>(null);
-  const [textInput, setTextInput] = useState('');
-  const [textPos, setTextPos] = useState<[number, number] | null>(null);
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  console.log('Whiteboard mounted');
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [tool, setTool] = useState<Tool>('pen');
+  const [penColor, setPenColor] = useState(DEFAULT_PEN_COLOR);
+  const [penSize, setPenSize] = useState(3);
+  const [eraserSize, setEraserSize] = useState(24);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [start, setStart] = useState<{x: number, y: number} | null>(null);
+  const [history, setHistory] = useState<string[]>([]);
+  const [redoStack, setRedoStack] = useState<string[]>([]);
+  const [textInput, setTextInput] = useState("");
+  const [textPos, setTextPos] = useState<{x: number, y: number} | null>(null);
+  const [fillShape, setFillShape] = useState(false);
+  const [dashed, setDashed] = useState(false);
+  const [lastPos, setLastPos] = useState<{x: number, y: number} | null>(null);
+  const [eraserCursor, setEraserCursor] = useState<{x: number, y: number} | null>(null);
 
-  // Mouse events for drawing
-  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    if (activeTool === 'pen') {
-      setCurrent({ type: 'pen', points: [[x, y]] });
-      setDrawing(true);
-    } else if (activeTool === 'rect' || activeTool === 'circle' || activeTool === 'arrow') {
-      setCurrent({ type: activeTool, start: [x, y], end: [x, y] } as DrawObject);
-      setDrawing(true);
-    } else if (activeTool === 'text') {
-      setTextPos([x, y]);
-      setTextInput('');
-    } else if (activeTool === 'eraser') {
-      let found = -1;
-      for (let i = objects.length - 1; i >= 0; i--) {
-        const obj = objects[i];
-        if (obj.type === 'pen') {
-          for (const [px, py] of obj.points) {
-            if (Math.abs(px - x) < 10 && Math.abs(py - y) < 10) {
-              found = i; break;
-            }
-          }
-        } else if (obj.type === 'rect' || obj.type === 'circle' || obj.type === 'arrow') {
-          const [sx, sy] = obj.start;
-          const [ex, ey] = obj.end;
-          if (x >= Math.min(sx, ex) && x <= Math.max(sx, ex) && y >= Math.min(sy, ey) && y <= Math.max(sy, ey)) {
-            found = i; break;
-          }
-        } else if (obj.type === 'text') {
-          if (Math.abs(obj.pos[0] - x) < 30 && Math.abs(obj.pos[1] - y) < 20) {
-            found = i; break;
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.ctrlKey && e.key.toLowerCase() === 'z') { handleUndo(); return; }
+      if (e.ctrlKey && e.key.toLowerCase() === 'y') { handleRedo(); return; }
+      for (const t of TOOLS) {
+        if (e.key.toUpperCase() === t.shortcut) setTool(t.key as Tool);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  });
+
+  // Save canvas state to history
+  const saveHistory = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setHistory(prev => [...prev.slice(-29), canvas.toDataURL()]);
+    setRedoStack([]);
+  };
+
+  // Drawing logic
+  // For smooth pen drawing
+  const [penPoints, setPenPoints] = useState<{x: number, y: number}[]>([]);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    const pos = getPos(e);
+    setIsDrawing(true);
+    setStart(pos);
+    setLastPos(pos);
+    if (tool === 'pen') {
+      setPenPoints([pos]);
+    }
+    if (tool === 'eraser') {
+      const ctx = canvasRef.current?.getContext('2d');
+      if (ctx) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, eraserSize / 2, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    if (tool === 'text') {
+      setTextPos(pos);
+      setTextInput("");
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDrawing) return;
+    const pos = getPos(e);
+    if (tool === 'pen') {
+      setPenPoints(prev => {
+        const newPoints = [...prev, pos];
+        // Draw smooth path
+        const ctx = canvasRef.current?.getContext('2d');
+        if (ctx && newPoints.length > 1) {
+          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+          // Redraw all history
+          if (history.length > 0) {
+            const img = new window.Image();
+            img.src = history[history.length - 1];
+            img.onload = () => {
+              ctx.drawImage(img, 0, 0, ctx.canvas.width, ctx.canvas.height);
+              drawSmoothPath(ctx, newPoints);
+            };
+          } else {
+            drawSmoothPath(ctx, newPoints);
           }
         }
+        return newPoints;
+      });
+    } else if (tool === 'eraser') {
+      const ctx = canvasRef.current?.getContext('2d');
+      if (ctx) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, eraserSize / 2, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.restore();
       }
-      if (found !== -1) {
-        setObjects((objs) => objs.filter((_, i) => i !== found));
-      }
+    } else if ((tool === 'line' || tool === 'rect' || tool === 'circle') && start) {
+      drawShapeOnOverlay(start, pos);
     }
   };
 
-  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!drawing || !current || !svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    if (current.type === 'pen') {
-      setCurrent({ ...current, points: [...current.points, [x, y]] } as DrawObject);
-    } else if (current.type === 'rect' || current.type === 'circle' || current.type === 'arrow') {
-      setCurrent({ ...current, end: [x, y] } as DrawObject);
+  // Helper to draw a smooth path using quadraticCurveTo
+  function drawSmoothPath(ctx: CanvasRenderingContext2D, points: {x: number, y: number}[]) {
+    if (points.length < 2) return;
+    ctx.save();
+    ctx.strokeStyle = penColor;
+    ctx.lineWidth = penSize;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length - 1; i++) {
+      const mid = {
+        x: (points[i].x + points[i + 1].x) / 2,
+        y: (points[i].y + points[i + 1].y) / 2
+      };
+      ctx.quadraticCurveTo(points[i].x, points[i].y, mid.x, mid.y);
     }
+    ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    setIsDrawing(false);
+    setLastPos(null);
+    if (!start) return;
+    const pos = getPos(e);
+    if (tool === 'line' || tool === 'rect' || tool === 'circle') {
+      drawShapeOnMain(start, pos);
+      clearOverlay();
+      saveHistory();
+    }
+    if (tool === 'pen') {
+      // Finalize the smooth path
+      const ctx = canvasRef.current?.getContext('2d');
+      if (ctx && penPoints.length > 1) {
+        drawSmoothPath(ctx, penPoints);
+      }
+      setPenPoints([]);
+      saveHistory();
+    }
+    if (tool === 'eraser') {
+      saveHistory();
+    }
+    setStart(null);
   };
 
-  const handlePointerUp = () => {
-    if (!drawing || !current) return;
-    setObjects((objs) => [...objs, current]);
-    setCurrent(null);
-    setDrawing(false);
-  };
+  function getPos(e: React.PointerEvent) {
+    const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+  }
 
-  const handleTextSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (textInput.trim() && textPos) {
-      setObjects((objs) => [...objs, { type: 'text', pos: textPos, text: textInput }]);
-      setTextInput('');
+  function drawShapeOnOverlay(start: {x: number, y: number}, end: {x: number, y: number}) {
+    const overlay = overlayCanvasRef.current;
+    if (!overlay) return;
+    const ctx = overlay.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    ctx.setLineDash(dashed ? [8, 6] : []);
+    ctx.strokeStyle = penColor;
+    ctx.lineWidth = penSize;
+    ctx.lineCap = "round";
+    ctx.fillStyle = penColor;
+    if (tool === 'line') {
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+    } else if (tool === 'rect') {
+      if (fillShape) {
+        ctx.fillRect(start.x, start.y, end.x - start.x, end.y - start.y);
+      } else {
+        ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
+      }
+    } else if (tool === 'circle') {
+      ctx.beginPath();
+      const r = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+      ctx.arc(start.x, start.y, r, 0, 2 * Math.PI);
+      if (fillShape) ctx.fill();
+      else ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  function drawShapeOnMain(start: {x: number, y: number}, end: {x: number, y: number}) {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+    console.log('drawShapeOnMain', { tool, start, end });
+    ctx.setLineDash(dashed ? [8, 6] : []);
+    ctx.strokeStyle = penColor;
+    ctx.lineWidth = penSize;
+    ctx.lineCap = "round";
+    ctx.fillStyle = penColor;
+    if (tool === 'line') {
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+    } else if (tool === 'rect') {
+      if (fillShape) {
+        ctx.fillRect(start.x, start.y, end.x - start.x, end.y - start.y);
+      } else {
+        ctx.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y);
+      }
+    } else if (tool === 'circle') {
+      ctx.beginPath();
+      const r = Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2));
+      ctx.arc(start.x, start.y, r, 0, 2 * Math.PI);
+      if (fillShape) ctx.fill();
+      else ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  function clearOverlay() {
+    const overlay = overlayCanvasRef.current;
+    if (!overlay) return;
+    const ctx = overlay.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+  }
+
+  // Text tool
+  function commitText() {
+    if (textInput && textPos) {
+      const ctx = canvasRef.current?.getContext("2d");
+      if (!ctx) return;
+      ctx.save();
+      ctx.font = `${16 + penSize * 2}px sans-serif`;
+      ctx.fillStyle = penColor;
+      ctx.fillText(textInput, textPos.x, textPos.y);
+      ctx.restore();
+      setTextInput("");
       setTextPos(null);
+      saveHistory();
     }
+  }
+
+  // Custom cursor for eraser
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (tool === "eraser") {
+      canvas.style.cursor = "none";
+    } else {
+      canvas.style.cursor = "crosshair";
+    }
+  }, [tool]);
+
+  // Clear canvas
+  const handleClear = () => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (ctx) ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    clearOverlay();
+    saveHistory();
+  };
+
+  // Undo/Redo
+  const handleUndo = () => {
+    if (history.length === 0) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const prev = history[history.length - 1];
+    setRedoStack(r => [canvas.toDataURL(), ...r]);
+    setHistory(h => h.slice(0, -1));
+    const img = new window.Image();
+    img.src = prev;
+    img.onload = () => {
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    clearOverlay();
+  };
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const next = redoStack[0];
+    setHistory(h => [...h, canvas.toDataURL()]);
+    setRedoStack(r => r.slice(1));
+    const img = new window.Image();
+    img.src = next;
+    img.onload = () => {
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    clearOverlay();
+  };
+
+  // Save as image
+  const handleSave = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const url = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "whiteboard.png";
+    a.click();
+  };
+
+  // Responsive canvas size
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const overlay = overlayCanvasRef.current;
+    if (!canvas || !overlay) return;
+    function resizeAndGrid() {
+      if (!canvas || !overlay) return;
+      const parent = canvas.parentElement;
+      let width = parent?.clientWidth || 900;
+      let height = parent?.clientHeight || 600;
+      if (width === 0) width = 900;
+      if (height === 0) height = 600;
+      // Save main canvas content only if width/height > 0
+      const hasContent = canvas.width > 0 && canvas.height > 0;
+      const temp = document.createElement("canvas");
+      temp.width = canvas.width;
+      temp.height = canvas.height;
+      if (hasContent) {
+        const tempCtx = temp.getContext("2d");
+        if (tempCtx && canvas) tempCtx.drawImage(canvas, 0, 0);
+      }
+      // Resize both canvases
+      canvas.width = width;
+      canvas.height = height;
+      overlay.width = width;
+      overlay.height = height;
+      // Restore main canvas content only if both temp and canvas have size
+      if (hasContent && width > 0 && height > 0 && canvas) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) ctx.drawImage(temp, 0, 0, width, height);
+      }
+      // Draw grid
+      const ctx = overlay.getContext('2d');
+      if (ctx) {
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        ctx.strokeStyle = "#e5e7eb";
+        ctx.lineWidth = 1;
+        for (let x = 0; x < overlay.width; x += 32) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, overlay.height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < overlay.height; y += 32) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(overlay.width, y);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+    resizeAndGrid();
+    window.addEventListener("resize", resizeAndGrid);
+    // Force a second resize after mount to ensure canvas is visible and sized
+    setTimeout(resizeAndGrid, 100);
+    setTimeout(resizeAndGrid, 500);
+    return () => window.removeEventListener("resize", resizeAndGrid);
+  }, []);
+
+  // Draw eraser cursor
+  useEffect(() => {
+    if (tool !== "eraser") return;
+    const overlay = overlayCanvasRef.current;
+    if (!overlay) return;
+    const move = (e: MouseEvent) => {
+      const rect = overlay.getBoundingClientRect();
+      overlay.style.setProperty("--x", `${e.clientX - rect.left}px`);
+      overlay.style.setProperty("--y", `${e.clientY - rect.top}px`);
+    };
+    overlay.addEventListener("mousemove", move);
+    return () => overlay.removeEventListener("mousemove", move);
+  }, [tool, eraserSize]);
+
+  // Track mouse for eraser cursor
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (tool === 'eraser') {
+      const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+      setEraserCursor({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    }
+  };
+  const handleMouseLeave = () => {
+    setEraserCursor(null);
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-[#f9fbfa] font-[\'Space Grotesk\',_\'Noto Sans\',_sans-serif] overflow-x-hidden">
-      <div className="flex flex-1 flex-col h-full">
-        <div className="flex flex-1 justify-center gap-1 py-5 px-6">
-          {/* Left Toolbar */}
-          <div className="flex flex-col w-24 pt-3">
-            <div className="flex flex-col border-b border-[#d7e0db] gap-2 px-2">
-              {tools.map((tool) => (
-                <button
-                  key={tool.key}
-                  onClick={() => setActiveTool(tool.key as ToolKey)}
-                  className={`flex flex-col items-center justify-center border-b-[3px] transition-all duration-150 ${activeTool === tool.key ? 'border-b-[#121714] text-[#121714] bg-[#e6f0ec] shadow' : 'border-b-transparent text-[#648273] hover:bg-[#f0f4f2]'} gap-1 pb-[7px] pt-2.5 focus:outline-none rounded-lg`}
-                  style={{ minHeight: 64 }}
-                  title={tool.name}
-                >
-                  <div className={activeTool === tool.key ? 'text-[#121714]' : 'text-[#648273]'}>{tool.icon}</div>
-                  <p className={`text-sm font-bold leading-normal tracking-[0.015em] ${activeTool === tool.key ? 'text-[#121714]' : 'text-[#648273]'}`}>{tool.name}</p>
-                </button>
-              ))}
-            </div>
+    <div className="w-full h-full relative bg-white rounded-xl overflow-hidden select-none" 
+      style={{ 
+        background: '#f0f0f0', 
+        minHeight: 800, 
+        minWidth: 600, // changed from 400 to 600 for better default size
+        width: '100%', 
+        height: '80vh',
+        boxSizing: 'border-box',
+        display: 'block',
+      }}
+    >
+      {/* Toolbar */}
+      <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-2 bg-white/60 backdrop-blur-md rounded-2xl shadow-xl p-3 items-center border border-gray-200 transition-all duration-300" style={{minWidth: 320, maxWidth: 700}}>
+        {TOOLS.map(t => (
+          <button
+            key={t.key}
+            className={`px-2 py-1 rounded-xl flex flex-col items-center text-xs font-semibold transition-all duration-200 transform hover:scale-110 hover:shadow-lg focus:outline-none ${tool === t.key ? "bg-blue-600 text-white scale-110 shadow-xl" : "bg-gray-100 text-gray-700 hover:bg-blue-100"}`}
+            onClick={() => setTool(t.key as Tool)}
+            title={t.tooltip}
+            style={{boxShadow: tool === t.key ? '0 4px 24px 0 #2563eb33' : undefined}}
+          >
+            <span className="text-lg mb-1" style={{transition: 'color 0.2s'}}>{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
+        {/* Color palette */}
+        {tool !== 'eraser' && (
+          <div className="flex items-center gap-1 ml-2">
+            {COLOR_PALETTE.map(color => (
+              <button
+                key={color}
+                className="w-6 h-6 rounded-full border-2 border-white shadow transition-all duration-200 hover:scale-125"
+                style={{ background: color, outline: penColor === color ? '2px solid #2563eb' : 'none', boxShadow: penColor === color ? '0 0 0 4px #2563eb22' : undefined, transform: penColor === color ? 'scale(1.2)' : undefined }}
+                onClick={() => setPenColor(color)}
+                title={color}
+              />
+            ))}
+            <input
+              type="color"
+              value={penColor}
+              onChange={e => setPenColor(e.target.value)}
+              className="w-7 h-7 border-0 bg-transparent cursor-pointer"
+              style={{ verticalAlign: 'middle' }}
+              title="Custom color"
+            />
           </div>
-
-          {/* Main Content Area */}
-          <div className="flex flex-col flex-1 max-w-[1800px] min-w-0 min-h-0">
-            {/* Top Menu Bar */}
-            <header className="flex items-center justify-between whitespace-nowrap border-b border-[#ebefed] px-10 py-3 bg-white">
-              <div className="flex items-center gap-4 text-[#121714]">
-                <div className="w-4 h-4">
-                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <g clipPath="url(#clip0_6_535)">
-                      <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z"
-                        fill="currentColor"
-                      />
-                    </g>
-                    <defs>
-                      <clipPath id="clip0_6_535"><rect width="48" height="48" fill="white" /></clipPath>
-                    </defs>
-                  </svg>
-                </div>
-                <h2 className="text-lg font-bold leading-tight tracking-[-0.015em]">Whiteboard</h2>
-              </div>
-              <div className="flex flex-1 justify-end gap-8">
-                <div className="flex items-center gap-9">
-                  <a className="text-[#121714] text-sm font-medium leading-normal" href="#">File</a>
-                  <a className="text-[#121714] text-sm font-medium leading-normal" href="#">Export</a>
-                  <a className="text-[#121714] text-sm font-medium leading-normal" href="#">Undo</a>
-                  <a className="text-[#121714] text-sm font-medium leading-normal" href="#">Redo</a>
-                </div>
-                <button className="flex max-w-[480px] items-center justify-center rounded-xl h-10 bg-[#ebefed] text-[#121714] gap-2 text-sm font-bold min-w-0 px-2.5">
-                  <div className="text-[#121714]">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
-                      <path d="M244.8,150.4a8,8,0,0,1-11.2-1.6A51.6,51.6,0,0,0,192,128a8,8,0,0,1-7.37-4.89,8,8,0,0,1,0-6.22A8,8,0,0,1,192,112a24,24,0,1,0-23.24-30,8,8,0,1,1-15.5-4A40,40,0,1,1,219,117.51a67.94,67.94,0,0,1,27.43,21.68A8,8,0,0,1,244.8,150.4ZM190.92,212a8,8,0,1,1-13.84,8,57,57,0,0,0-98.16,0,8,8,0,1,1-13.84-8,72.06,72.06,0,0,1,33.74-29.92,48,48,0,1,1,58.36,0A72.06,72.06,0,0,1,190.92,212ZM128,176a32,32,0,1,0-32-32A32,32,0,0,0,128,176ZM72,120a8,8,0,0,0-8-8A24,24,0,1,1,87.24,82a8,8,0,1,0,15.5-4A40,40,0,1,0,37,117.51,67.94,67.94,0,0,0,9.6,139.19a8,8,0,1,0,12.8,9.61A51.6,51.6,0,0,1,64,128,8,8,0,0,0,72,120Z" />
-                    </svg>
-                  </div>
-                </button>
-                <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10" style={{backgroundImage: 'url(https://lh3.googleusercontent.com/aida-public/AB6AXuADx1Im20-01RnOvhwQGPn_HdCYW0qk4_FKrrNhiLEmtk8N54NTkZjH6WJFnOgjautykRUM8VUdTphNjx9Nuo8pBjvCSEi62_M83DKsqfTGwirxFeAEdtSCySLcZ_uHSGrXK8yGeSvFJ9Uv9lC6nhsJD0kpLaGm6LIc1rHssn5zPJotteuLZKZcN1vZtMrBEWj-fYi12x6nv42w4nqVCCCzKOMclLHk-ciZGUpTQ5rCLR9X6ZDlQVE7wyZ-llyWV6Nkm_K4wu7WoTjj'}}></div>
-              </div>
-            </header>
-            {/* Canvas Area */}
-            <div className="flex-1 flex flex-col justify-end overflow-hidden px-0 pb-0 relative min-h-0 min-w-0">
-              <div className="flex-1 flex items-center justify-center min-h-0 min-w-0">
-                <div className="bg-white rounded-2xl shadow border border-[#ebefed] w-full h-full max-w-full max-h-full flex items-center justify-center text-gray-300 text-2xl font-bold relative min-h-0 min-w-0">
-                  <svg
-                    ref={svgRef}
-                    width="100%"
-                    height="100%"
-                    viewBox="0 0 1800 900"
-                    className="absolute left-0 top-0 w-full h-full cursor-crosshair select-none"
-                    style={{ zIndex: 2 }}
-                    onPointerDown={handlePointerDown}
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={handlePointerUp}
-                  >
-                    <defs>
-                      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto" markerUnits="strokeWidth">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="#222" />
-                      </marker>
-                    </defs>
-                    {objects.map((obj, i) => (
-                      <g key={i}>{getSvgElement(obj)}</g>
-                    ))}
-                    {current && <g>{getSvgElement(current)}</g>}
-                  </svg>
-                  {/* Text input overlay */}
-                  {activeTool === 'text' && textPos && (
-                    <form
-                      className="absolute"
-                      style={{ left: textPos[0], top: textPos[1], zIndex: 10 }}
-                      onSubmit={handleTextSubmit}
-                    >
-                      <input
-                        autoFocus
-                        className="border rounded px-2 py-1 text-base shadow"
-                        value={textInput}
-                        onChange={e => setTextInput(e.target.value)}
-                        onBlur={() => {
-                          if (textInput.trim() && textPos) {
-                            setObjects((objs) => [...objs, { type: 'text', pos: textPos, text: textInput }]);
-                            setTextInput('');
-                            setTextPos(null);
-                          }
-                        }}
-                        style={{ minWidth: 60 }}
-                      />
-                    </form>
-                  )}
-                </div>
-              </div>
-              {/* Bottom Right Chat Button */}
-              <button className="absolute bottom-6 right-6 flex items-center justify-center rounded-xl h-14 bg-[#fbfdfc] text-[#121714] text-base font-bold min-w-0 px-2 gap-4 pl-4 pr-6 shadow">
-                <div className="text-[#121714]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256">
-                    <path d="M140,128a12,12,0,1,1-12-12A12,12,0,0,1,140,128ZM84,116a12,12,0,1,0,12,12A12,12,0,0,0,84,116Zm88,0a12,12,0,1,0,12,12A12,12,0,0,0,172,116Zm60,12A104,104,0,0,1,79.12,219.82L45.07,231.17a16,16,0,0,1-20.24-20.24l11.35-34.05A104,104,0,1,1,232,128Zm-16,0A88,88,0,1,0,51.81,172.06a8,8,0,0,1,.66,6.54L40,216,77.4,203.53a7.85,7.85,0,0,1,2.53-.42,8,8,0,0,1,4,1.08A88,88,0,0,0,216,128Z" />
-                  </svg>
-                </div>
-                Chat
-              </button>
-            </div>
+        )}
+        {tool === "pen" && (
+          <>
+            <label className="ml-2 text-xs">Size</label>
+            <input
+              type="range"
+              min={1}
+              max={16}
+              value={penSize}
+              onChange={e => setPenSize(Number(e.target.value))}
+              className="mx-1 accent-blue-500"
+            />
+            <span className="text-xs">{penSize}px</span>
+          </>
+        )}
+        {tool === "eraser" && (
+          <div className="flex items-center gap-2 ml-2">
+            <span className="text-xs">Size</span>
+            <input
+              type="range"
+              min={8}
+              max={64}
+              value={eraserSize}
+              onChange={e => setEraserSize(Number(e.target.value))}
+              className="accent-blue-500"
+            />
+            <span className="text-xs">{eraserSize}px</span>
           </div>
-        </div>
+        )}
+        {(tool === 'rect' || tool === 'circle') && (
+          <button
+            className={`px-2 py-1 rounded-xl ml-2 text-xs font-semibold transition-all duration-200 ${fillShape ? 'bg-blue-500 text-white scale-105' : 'bg-gray-200 text-gray-700 hover:bg-blue-100'}`}
+            onClick={() => setFillShape(f => !f)}
+            title="Toggle fill"
+          >
+            {fillShape ? 'Filled' : 'Outline'}
+          </button>
+        )}
+        {(tool === 'line' || tool === 'rect' || tool === 'circle') && (
+          <button
+            className={`px-2 py-1 rounded-xl ml-2 text-xs font-semibold transition-all duration-200 ${dashed ? 'bg-blue-500 text-white scale-105' : 'bg-gray-200 text-gray-700 hover:bg-blue-100'}`}
+            onClick={() => setDashed(d => !d)}
+            title="Dashed/Solid"
+          >
+            {dashed ? 'Dashed' : 'Solid'}
+          </button>
+        )}
+        <button className="px-3 py-1 rounded-xl bg-gray-300 text-gray-800 ml-2 transition-all duration-200 hover:bg-gray-400" onClick={handleUndo} disabled={history.length === 0} title="Undo (Ctrl+Z)">
+          Undo
+        </button>
+        <button className="px-3 py-1 rounded-xl bg-gray-300 text-gray-800 transition-all duration-200 hover:bg-gray-400" onClick={handleRedo} disabled={redoStack.length === 0} title="Redo (Ctrl+Y)">
+          Redo
+        </button>
+        <button className="px-3 py-1 rounded-xl bg-red-500 text-white ml-2 transition-all duration-200 hover:bg-red-600" onClick={handleClear}>
+          Clear
+        </button>
+        <button className="px-3 py-1 rounded-xl bg-green-500 text-white ml-2 transition-all duration-200 hover:bg-green-600" onClick={handleSave}>
+          Save as Image
+        </button>
+      </div>
+      {/* Main Canvas and Overlay Canvas */}
+      <div className="w-full h-full" style={{position: 'relative'}}>
+        {canvasRef ? null : <div style={{color: 'red'}}>Canvas not rendered</div>}
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full block bg-white absolute left-0 top-0"
+          style={{ zIndex: 2, pointerEvents: 'auto' }}
+          onPointerDown={e => { console.log('PointerDown', e); handlePointerDown(e); }}
+          onPointerUp={e => { console.log('PointerUp', e); handlePointerUp(e); }}
+          onPointerOut={e => { console.log('PointerOut', e); handlePointerUp(e); }}
+          onPointerMove={e => { console.log('PointerMove', e); handlePointerMove(e); }}
+          onMouseMove={e => { console.log('MouseMove', e); handleMouseMove(e); }}
+          onMouseLeave={e => { console.log('MouseLeave', e); handleMouseLeave(); }}
+        />
+        <canvas
+          ref={overlayCanvasRef}
+          className="w-full h-full block absolute left-0 top-0"
+          style={{ zIndex: 1, pointerEvents: 'none' }}
+        />
+        {/* Eraser Cursor */}
+        {tool === "eraser" && eraserCursor && (
+          <div
+            style={{
+              pointerEvents: "none",
+              position: "absolute",
+              left: eraserCursor.x - eraserSize / 2,
+              top: eraserCursor.y - eraserSize / 2,
+              width: eraserSize,
+              height: eraserSize,
+              borderRadius: "50%",
+              border: "2px solid #2563eb",
+              background: "rgba(37,99,235,0.08)",
+              zIndex: 30,
+              transition: "width 0.1s, height 0.1s, left 0.05s, top 0.05s",
+              boxShadow: '0 0 0 4px #2563eb22',
+            }}
+          />
+        )}
+        {/* Text Input Overlay */}
+        {tool === 'text' && textPos && (
+          <input
+            autoFocus
+            type="text"
+            className="absolute z-30 border border-blue-400 rounded px-2 py-1 text-sm bg-white/90 shadow-lg"
+            style={{ left: textPos.x, top: textPos.y, minWidth: 80, transition: 'box-shadow 0.2s' }}
+            value={textInput}
+            onChange={e => setTextInput(e.target.value)}
+            onBlur={commitText}
+            onKeyDown={e => {
+              if (e.key === 'Enter') commitText();
+            }}
+            placeholder="Type here..."
+          />
+        )}
       </div>
     </div>
   );
