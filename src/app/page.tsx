@@ -85,6 +85,24 @@ interface Activity {
   color: string;
 }
 
+// Add this helper at the top (after imports)
+const ownerUsernames = [
+  'arun2061292007',
+  'arunshekhram',
+  'meettomar07',
+  'ashishkrs1977',
+  'shubham229177',
+];
+const isOwner = (user: string) => {
+  if (!user) return false;
+  if (ownerUsernames.includes(user)) return true;
+  if (user.includes('@')) {
+    const uname = user.split('@')[0];
+    if (ownerUsernames.includes(uname)) return true;
+  }
+  return false;
+};
+
 // Feature components
 const ProjectsSection = ({ futureProjects, setActiveTab }: { futureProjects: FutureProject[], setActiveTab: (tab: string) => void }) => {
   const [projects, setProjects] = useState<Project[]>([
@@ -152,7 +170,7 @@ const ProjectsSection = ({ futureProjects, setActiveTab }: { futureProjects: Fut
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-900 mb-1">{project.title}</h4>
-                <p className="text-sm text-gray-600">{project.description}</p>
+            <p className="text-sm text-gray-600">{project.description}</p>
                 <div className="mt-2">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     project.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
@@ -184,7 +202,7 @@ const ProjectsSection = ({ futureProjects, setActiveTab }: { futureProjects: Fut
                 <div className="flex items-center gap-2">
                   <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">Future</span>
                   <span className="text-xs text-gray-500">👥 {project.members} members</span>
-                </div>
+              </div>
               </div>
             </div>
           </div>
@@ -294,11 +312,11 @@ const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => 
         <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
           <MessageCircle className="w-5 h-5 text-green-600" />
         </div>
-        <div>
+              <div>
           <h3 className="text-xl font-bold text-gray-900">Quick Chat</h3>
           <p className="text-sm text-gray-500">Real-time communication</p>
-        </div>
-      </div>
+              </div>
+              </div>
       <div className="flex gap-2">
         <button 
           className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-200 text-sm font-medium shadow-sm"
@@ -316,7 +334,11 @@ const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => 
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium text-sm text-gray-900">{msg.user}</span>
+              <span className="font-medium text-sm text-gray-900">{msg.user}
+  {isOwner(msg.user) && (
+    <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">Owner</span>
+  )}
+</span>
               <span className="text-xs text-gray-500">
                 {msg.timestamp?.toDate().toLocaleTimeString() || 'Now'}
               </span>
@@ -330,20 +352,20 @@ const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => 
     </div>
     <div className="border-t border-gray-200 pt-4">
       <div className="flex gap-3">
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+      <input
+        type="text"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
           placeholder="Type your message..."
           className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-        />
-        <button
-          onClick={sendMessage}
+      />
+      <button
+        onClick={sendMessage}
           disabled={!message.trim()}
           className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
-        >
-          Send
+      >
+        Send
         </button>
       </div>
     </div>
@@ -391,7 +413,7 @@ const LibrarySection = ({ setActiveTab }: { setActiveTab: (tab: string) => void 
           <div key={file.id} className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer border border-transparent hover:border-gray-200">
             <div className="flex-shrink-0">
               <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                {getFileIcon(file.type)}
+              {getFileIcon(file.type)}
               </div>
             </div>
             <div className="flex-1 min-w-0">
@@ -561,11 +583,11 @@ const FuturePlanningSection = ({
                 <h4 className="font-semibold text-gray-900 mb-1">{project.title}</h4>
                 <p className="text-sm text-gray-600 mb-3">{project.description}</p>
                 <div className="flex items-center gap-3 mb-2">
-                  {project.tags.map((tag, index) => (
+              {project.tags.map((tag, index) => (
                     <span key={index} className={`${getTagColorClasses(project.color)} text-xs px-2 py-1 rounded-lg font-medium`}>
-                      {tag}
-                    </span>
-                  ))}
+                  {tag}
+                </span>
+              ))}
                 </div>
                 <div className="flex items-center gap-3 text-xs text-gray-500">
                   <span>👥 {project.members} members</span>
@@ -1117,10 +1139,10 @@ function HomeContent() {
           <div className="space-y-8">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
                 className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
               >
                 <div className="flex items-center justify-between">
@@ -1132,12 +1154,12 @@ function HomeContent() {
                     <span className="text-2xl">📁</span>
                   </div>
                 </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
                 className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
               >
                 <div className="flex items-center justify-between">
@@ -1149,12 +1171,12 @@ function HomeContent() {
                     <span className="text-2xl">👥</span>
                   </div>
                 </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
                 className="bg-white rounded-xl p-6 shadow-lg border border-gray-100"
               >
                 <div className="flex items-center justify-between">
@@ -1201,21 +1223,21 @@ function HomeContent() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-              >
-                <ChatSection 
-                  messages={chatMessages}
-                  sendMessage={sendMessage}
-                  message={message}
-                  setMessage={setMessage}
-                  setActiveTab={setActiveTab}
-                />
-              </motion.div>
+            >
+              <ChatSection 
+                messages={chatMessages}
+                sendMessage={sendMessage}
+                message={message}
+                setMessage={setMessage}
+                setActiveTab={setActiveTab}
+              />
+            </motion.div>
             </div>
-
+            
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
               >
                 <ChatSection 
@@ -1231,13 +1253,13 @@ function HomeContent() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
-              >
-                <LibrarySection setActiveTab={setActiveTab} />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+            >
+              <LibrarySection setActiveTab={setActiveTab} />
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.9 }}
               >
                 <QuickActions setActiveTab={setActiveTab} />
@@ -1393,13 +1415,13 @@ function HomeContent() {
                   placeholder="Enter your password"
                   required
                 />
-                <button
+          <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
+          >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+          </button>
               </div>
             </div>
             
@@ -1418,13 +1440,13 @@ function HomeContent() {
                     placeholder="Confirm your password"
                     required
                   />
-                  <button
+          <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+          </button>
                 </div>
               </div>
             )}
@@ -1435,7 +1457,7 @@ function HomeContent() {
               </div>
             )}
             
-            <button
+            <button 
               type="submit"
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-4 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1510,7 +1532,7 @@ function HomeContent() {
               <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors relative">
                 <div className="w-5 h-5 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-xs">📊</span>
-                </div>
+            </div>
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
               </button>
               <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
@@ -1536,7 +1558,7 @@ function HomeContent() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
-                </button>
+              </button>
                 {/* Dropdown Menu */}
               </div>
             </div>
@@ -1554,19 +1576,19 @@ function HomeContent() {
             renderTabContent()
           ) : (
             <div className="glass-card shadow-xl p-8 mb-8">
-              {activeTab === 'dashboard' && (
+          {activeTab === 'dashboard' && (
                 <div className="mb-8">
                   <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white mb-6">
                     <h2 className="text-3xl font-bold mb-2">
                       Welcome back, {user.email?.split('@')[0]}! 👋
-                    </h2>
+              </h2>
                     <p className="text-blue-100 text-lg">
-                      Your smart collaboration hub for IIT batch projects and learning
-                    </p>
+                Your smart collaboration hub for IIT batch projects and learning
+              </p>
                   </div>
-                </div>
-              )}
-              {renderTabContent()}
+            </div>
+          )}
+          {renderTabContent()}
             </div>
           )}
         </main>
