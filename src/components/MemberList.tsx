@@ -56,11 +56,8 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
 
   // Split members into special and others
   const specialMembers = specialOrder
-    .map(s => {
-      // Find by displayName (from name or email prefix)
-      return members.find(m => getDisplayName(m) === s.key);
-    })
-    .filter(Boolean);
+    .map(s => members.find(m => getDisplayName(m) === s.key))
+    .filter((m): m is Member => Boolean(m)); // TypeScript type guard
 
   const otherMembers = members.filter(
     m => !specialOrder.some(s => getDisplayName(m) === s.key)
