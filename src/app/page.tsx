@@ -2,9 +2,9 @@
 
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, User, createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, addDoc, onSnapshot, query, orderBy, Timestamp, getCountFromServer, where } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, Timestamp, where } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { 
   Users, 

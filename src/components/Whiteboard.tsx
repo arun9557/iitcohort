@@ -30,7 +30,6 @@ export default function Whiteboard() {
   const [textPos, setTextPos] = useState<{x: number, y: number} | null>(null);
   const [fillShape, setFillShape] = useState(false);
   const [dashed, setDashed] = useState(false);
-  const [lastPos, setLastPos] = useState<{x: number, y: number} | null>(null);
   const [eraserCursor, setEraserCursor] = useState<{x: number, y: number} | null>(null);
 
   // Keyboard shortcuts
@@ -63,7 +62,6 @@ export default function Whiteboard() {
     const pos = getPos(e);
     setIsDrawing(true);
     setStart(pos);
-    setLastPos(pos);
     if (tool === 'pen') {
       setPenPoints([pos]);
     }
@@ -146,7 +144,6 @@ export default function Whiteboard() {
 
   const handlePointerUp = (e: React.PointerEvent) => {
     setIsDrawing(false);
-    setLastPos(null);
     if (!start) return;
     const pos = getPos(e);
     if (tool === 'line' || tool === 'rect' || tool === 'circle') {
