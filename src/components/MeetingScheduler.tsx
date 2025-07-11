@@ -83,6 +83,11 @@ const initialMeetings: Meeting[] = [
 //   { ssr: false }
 // );
 
+// Helper: Convert meeting date+time to JS Date object
+function getMeetingDateTime(meeting: Meeting) {
+  return new Date(`${meeting.date}T${meeting.time}`);
+}
+
 export default function MeetingScheduler() {
   const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -241,6 +246,9 @@ export default function MeetingScheduler() {
   //     });
   //   }
   // };
+
+  // Sort meetings by date+time (earliest first)
+  const sortedMeetings = [...meetings].sort((a, b) => getMeetingDateTime(a).getTime() - getMeetingDateTime(b).getTime());
 
   return (
     <div className="space-y-6">
@@ -534,7 +542,7 @@ export default function MeetingScheduler() {
 
       {/* Meetings List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {meetings.map((meeting) => (
+        {sortedMeetings.map((meeting) => (
           <motion.div
             key={meeting.id}
             initial={{ opacity: 0, y: 20 }}

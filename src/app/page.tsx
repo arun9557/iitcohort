@@ -918,6 +918,18 @@ const QuickActions = ({ setActiveTab }: { setActiveTab: (tab: string) => void })
 
 // Main component wrapped with Suspense to handle the workStore error
 function HomeContent() {
+  // Live date and time state (must be at the very top)
+  const [dateTime, setDateTime] = useState(new Date());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+  // Format date and time for display
+  const formattedTime = dateTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const formattedDate = dateTime.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true); // Sidebar toggle state
@@ -997,14 +1009,11 @@ function HomeContent() {
 
   // Fetch today's meetings count
   useEffect(() => {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+    // Get today's date string in YYYY-MM-DD format
+    const todayStr = new Date().toISOString().slice(0, 10);
     const q = query(
       collection(db, 'meetings'),
-      where('date', '>=', Timestamp.fromDate(today)),
-      where('date', '<', Timestamp.fromDate(tomorrow))
+      where('date', '==', todayStr)
     );
     const unsub = onSnapshot(q, snap => {
       setMeetingCount(snap.size);
@@ -1485,6 +1494,16 @@ function HomeContent() {
                 <h1 className="text-2xl font-bold text-gray-900">IITCohort</h1>
                 <p className="text-sm text-gray-500">Smart Collaboration Platform</p>
               </div>
+            </div>
+            {/* Live Date and Time - modern look */}
+            <div className="flex items-center gap-2 px-4 py-1 rounded-lg bg-gradient-to-r from-yellow-100 to-blue-100 shadow-sm border border-blue-200">
+              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6l4 2"/>
+              </svg>
+              <span className="font-semibold text-blue-700 tracking-wide">{formattedDate}</span>
+              <span className="text-gray-400 font-bold">|</span>
+              <span className="font-mono text-lg text-blue-900">{formattedTime}</span>
             </div>
             <div className="flex items-center gap-3">
               {/* Activity Feed Button */}
