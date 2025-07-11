@@ -18,7 +18,7 @@ import {
   Settings,
   X,
   Video,
-  Image,
+  ImageIcon,
   Music,
   Download,
   Mail,
@@ -93,7 +93,7 @@ const ownerUsernames = [
   'ashishkrs1977',
   'shubham229177',
 ];
-const isOwner = (user: any) => {
+const isOwner = (user: User | string | null) => {
   if (!user) return false;
   let username = '';
   if (typeof user === 'string') {
@@ -384,7 +384,7 @@ const LibrarySection = ({ setActiveTab }: { setActiveTab: (tab: string) => void 
     switch (type) {
       case 'document': return <FileText className="w-4 h-4 text-blue-500" />;
       case 'video': return <Video className="w-4 h-4 text-red-500" />;
-      case 'image': return <Image className="w-4 h-4 text-green-500" />;
+      case 'image': return <ImageIcon className="w-4 h-4 text-green-500" />;
       case 'audio': return <Music className="w-4 h-4 text-purple-500" />;
       default: return <FileText className="w-4 h-4 text-gray-500" />;
     }
@@ -939,14 +939,7 @@ const QuickActions = ({ setActiveTab }: { setActiveTab: (tab: string) => void })
   );
 };
 
-// Owner usernames (email prefix)
-const OWNER_KEYS = [
-  'arun2061292007',
-  'arunshekhram',
-  'meettomar07',
-  'ashishkrs1977',
-  'shubham229177'
-];
+// Owner usernames (email prefix) - used in isOwner function
 
 // Main component wrapped with Suspense to handle the workStore error
 function HomeContent() {

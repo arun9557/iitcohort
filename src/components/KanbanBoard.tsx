@@ -27,8 +27,7 @@ import {
   Calendar, 
   User, 
   GripVertical,
-  X,
-  Send
+  X
 } from 'lucide-react';
 import { collection, onSnapshot, query, orderBy, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';

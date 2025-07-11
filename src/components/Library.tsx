@@ -10,6 +10,7 @@ import {
   Upload,
   FolderOpen
 } from 'lucide-react';
+import Image from 'next/image';
 import FileUpload from './FileUpload';
 import FileManager from './FileManager';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
@@ -302,11 +303,16 @@ const Library: React.FC = () => {
               {recentlyUploaded.map((item) => (
                 <div key={item.id} className="flex flex-col gap-3 pb-3">
                   <div
-                    className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
-                    style={{ backgroundImage: `url(${item.fileUrl})` }}
+                    className="w-full aspect-square rounded-xl cursor-pointer hover:opacity-90 transition-opacity overflow-hidden"
                     onClick={() => console.log('View item:', item.title)}
                   >
-                    <img src={item.fileUrl} alt={item.title} style={{ display: 'none' }} />
+                    <Image 
+                      src={item.fileUrl} 
+                      alt={item.title} 
+                      width={158}
+                      height={158}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div>
                     <p className="text-[#121417] text-base font-medium leading-normal">{item.title}</p>
@@ -322,11 +328,16 @@ const Library: React.FC = () => {
               {currentItems.map((item) => (
                 <div key={item.id} className="flex flex-col gap-3 pb-3">
                   <div
-                    className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity relative"
-                    style={{ backgroundImage: `url(${item.fileUrl})` }}
+                    className="w-full aspect-square rounded-xl cursor-pointer hover:opacity-90 transition-opacity overflow-hidden relative"
                     onClick={() => console.log('View item:', item.title)}
                   >
-                    <img src={item.fileUrl} alt={item.title} style={{ display: 'none' }} />
+                    <Image 
+                      src={item.fileUrl} 
+                      alt={item.title} 
+                      width={158}
+                      height={158}
+                      className="w-full h-full object-cover"
+                    />
                     <button
                       className="absolute top-2 right-2 p-1 bg-white/80 rounded-full hover:bg-white transition-colors"
                       onClick={(e) => {
