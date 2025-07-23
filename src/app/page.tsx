@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, ReactElement } from 'react';
+import { useState, useEffect, ReactElement, useCallback } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, User, createUserWithEmailAndPassword } from 'firebase/auth';
 import { collection, addDoc, onSnapshot, query, orderBy, Timestamp, limit, writeBatch, getDocs, where } from 'firebase/firestore';
 import { motion } from 'framer-motion';
@@ -978,11 +978,16 @@ function HomeContent(): ReactElement {
 
   // Add state for VS Code tab selection
   const [vsTab, setVsTab] = useState<'advanced' | 'monaco'>('advanced');
-  // State for notifications
-  const [notifications, setNotifications] = useState<{id: string, message: string, timestamp: any, userEmail?: string}[]>([]);
+  // State for notifications with proper type for timestamp
+  const [notifications, setNotifications] = useState<{
+    id: string;
+    message: string;
+    timestamp: Timestamp;
+    userEmail?: string;
+  }[]>([]);
 
-  // Add notification to Firestore
-  const addNotification = async (message: string) => {
+  // Add notification to Firestore - wrapped in useCallback to prevent recreation on each render
+  const addNotification = useCallback(async (message: string) => {
     if (!user) return;
     
     try {
@@ -995,7 +1000,7 @@ function HomeContent(): ReactElement {
     } catch (error) {
       console.error('Error adding notification:', error);
     }
-  };
+  }, [user]);
 
   const clearNotifications = async () => {
     try {

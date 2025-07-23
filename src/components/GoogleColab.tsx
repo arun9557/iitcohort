@@ -1,8 +1,12 @@
 'use client';
 
-import React, { useState, useCallback, useRef, createRef } from 'react';
-import { Play, File, Folder, Plus, Save, Share2, Wifi, Trash2, Menu, Search, Edit2, Download, Trash } from 'lucide-react';
-import ColabCell, { Cell } from './ColabCell';
+import React, { useState, useRef, useCallback, createRef } from 'react';
+import { Plus, Share2, Wifi, Menu, Download, Edit2, Trash2, Play } from 'lucide-react';
+import { Cell } from './ColabCell';
+import dynamic from 'next/dynamic';
+
+// Dynamically import ColabCell to avoid SSR issues with Monaco Editor
+const ColabCell = dynamic(() => import('./ColabCell'), { ssr: false });
 
 const ColabSidebar: React.FC<{ cells: Cell[], onTocClick: (id: string) => void }> = ({ cells, onTocClick }) => {
     return (
@@ -127,7 +131,7 @@ export default function GoogleColab() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleSaveExport} className="flex items-center gap-1 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200 rounded" title="Save/Export"><Download size={16}/>Export</button>
-          <button onClick={handleClearAllOutputs} className="flex items-center gap-1 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200 rounded" title="Clear all outputs"><Trash size={16}/>Clear Outputs</button>
+          <button onClick={handleClearAllOutputs} className="flex items-center gap-1 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200 rounded" title="Clear all outputs"><Trash2 size={16}/>Clear Outputs</button>
           <button className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] text-white rounded hover:bg-blue-700 transition">
             <Share2 size={16} />
             Share

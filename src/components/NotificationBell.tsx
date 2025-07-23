@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { Bell } from 'lucide-react';
 import { User } from 'firebase/auth';
+import { Timestamp } from 'firebase/firestore';
 import NotificationsPopup from './NotificationsPopup';
 import { isOwner } from '../utils/auth';
 
 interface Notification {
   id: string;
   message: string;
-  timestamp: any;
+  timestamp: Timestamp;
   userEmail?: string;
 }
 

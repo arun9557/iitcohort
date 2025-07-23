@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, memo, forwardRef } from 'react';
 import Editor from '@monaco-editor/react';
-import { Play, MessageSquare, Trash2, Check, Pencil, ArrowUp, ArrowDown, Link, XCircle, Bold, Italic, Code2, Heading1, Heading2, Heading3, List, ListOrdered, Quote, Image as ImageIcon, Smile, Divide, Link2 } from 'lucide-react';
+import { Play, Trash2, ArrowUp, ArrowDown, XCircle, Bold, Italic, Code2, Heading1, Heading2, Heading3, List, ListOrdered, Quote, Image as ImageIcon, Smile, Link2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // A simple markdown renderer component
@@ -125,7 +125,7 @@ const ColabCell = forwardRef<HTMLDivElement, ColabCellProps>(({ cell, onChange, 
                     <button className="p-1 hover:bg-gray-200 rounded" title="Quote" onMouseDown={e => {e.preventDefault(); if(textAreaRef.current) insertAtCursor(textAreaRef.current, '> ', '', 'quote');}}><Quote size={18}/></button>
                     <button className="p-1 hover:bg-gray-200 rounded" title="Bulleted List" onMouseDown={e => {e.preventDefault(); if(textAreaRef.current) insertAtCursor(textAreaRef.current, '- ', '', 'list item');}}><List size={18}/></button>
                     <button className="p-1 hover:bg-gray-200 rounded" title="Numbered List" onMouseDown={e => {e.preventDefault(); if(textAreaRef.current) insertAtCursor(textAreaRef.current, '1. ', '', 'list item');}}><ListOrdered size={18}/></button>
-                    <button className="p-1 hover:bg-gray-200 rounded" title="Divider" onMouseDown={e => {e.preventDefault(); if(textAreaRef.current) insertAtCursor(textAreaRef.current, '\n---\n');}}><Divide size={18}/></button>
+                    <button className="p-1 hover:bg-gray-200 rounded" title="Divider" onMouseDown={e => {e.preventDefault(); if(textAreaRef.current) insertAtCursor(textAreaRef.current, '\n---\n');}}>— —</button>
                     <button className="p-1 hover:bg-gray-200 rounded" title="Math" onMouseDown={e => {e.preventDefault(); if(textAreaRef.current) insertAtCursor(textAreaRef.current, '$$', '$$', 'math');}}><span className="font-mono text-lg">∑</span></button>
                     <button className="p-1 hover:bg-gray-200 rounded" title="Emoji" onMouseDown={e => {e.preventDefault(); if(textAreaRef.current) insertAtCursor(textAreaRef.current, '😊');}}><Smile size={18}/></button>
                  </div>
