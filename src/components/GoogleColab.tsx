@@ -8,29 +8,7 @@ import dynamic from 'next/dynamic';
 // Dynamically import ColabCell to avoid SSR issues with Monaco Editor
 const ColabCell = dynamic(() => import('./ColabCell'), { ssr: false });
 
-const ColabSidebar: React.FC<{ cells: Cell[], onTocClick: (id: string) => void }> = ({ cells, onTocClick }) => {
-    return (
-        <div className="w-64 bg-[#f1f1f1] border-r border-gray-300 flex flex-col">
-            <div className="p-3 border-b border-gray-300 text-sm font-semibold text-gray-700">
-                Table of Contents
-            </div>
-            <div className="flex-1 p-2 text-sm text-gray-600 overflow-y-auto">
-                {cells.filter(c => c.type === 'text' && c.content.startsWith('#')).map(cell => (
-                    <button 
-                        key={cell.id} 
-                        onClick={() => onTocClick(cell.id)}
-                        className="block w-full text-left p-2 hover:bg-gray-200 rounded"
-                    >
-                        {cell.content.split('\n')[0].replace(/#/g, '')}
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
-};
-
 export default function GoogleColab() {
-  const menuItems = ['File', 'Edit', 'View', 'Insert', 'Runtime', 'Tools', 'Help'];
   const [notebookTitle, setNotebookTitle] = useState('Untitled Notebook');
   const [editingTitle, setEditingTitle] = useState(false);
   const [cells, setCells] = useState<Cell[]>([
@@ -90,13 +68,6 @@ export default function GoogleColab() {
             }, index * 1600);
         }
     });
-  };
-
-  const scrollToCell = (id: string) => {
-    const cellIndex = cells.findIndex(c => c.id === id);
-    if(cellIndex !== -1 && cellRefs.current[cellIndex]) {
-        cellRefs.current[cellIndex].current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
   };
 
   const handleSaveExport = () => {

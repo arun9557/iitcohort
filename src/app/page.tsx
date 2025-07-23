@@ -1109,7 +1109,7 @@ function HomeContent(): ReactElement {
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [addNotification]);
 
   useEffect(() => {
     if (!user) return;
