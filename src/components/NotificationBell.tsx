@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Bell } from 'lucide-react';
+import { User } from 'firebase/auth';
 import NotificationsPopup from './NotificationsPopup';
 import { isOwner } from '../utils/auth';
 
@@ -16,7 +17,7 @@ interface NotificationBellProps {
   notifications: Notification[];
   onClear: () => void;
   onAddNotification?: (message: string) => void;
-  user?: any;
+  user?: User | null;
 }
 
 const NotificationBell: React.FC<NotificationBellProps> = ({ 
@@ -48,7 +49,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
             setIsOpen(false);
           }}
           onAddNotification={onAddNotification}
-          isAdmin={user && isOwner(user)}
+          isAdmin={user ? isOwner(user) : false}
         />
       )}
     </div>

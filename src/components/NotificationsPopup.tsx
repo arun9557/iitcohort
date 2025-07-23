@@ -6,7 +6,11 @@ import { Bell, X } from 'lucide-react';
 interface Notification {
   id: string;
   message: string;
-  timestamp: any;
+  timestamp: {
+    toDate: () => Date;
+    seconds?: number;
+    nanoseconds?: number;
+  };
   userEmail?: string;
 }
 

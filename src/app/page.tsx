@@ -2,9 +2,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect, ReactElement } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, User, createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, addDoc, onSnapshot, query, orderBy, Timestamp, where, limit, writeBatch, getDocs } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, Timestamp, limit, writeBatch, getDocs, where } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { 
   Users, 
@@ -14,7 +15,6 @@ import {
   Lightbulb,
   Plus,
   Search,
-  Bell,
   Settings,
   X,
   Video,
@@ -25,8 +25,8 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Menu,
-  ChevronLeft
+  ChevronLeft,
+  Menu
 } from 'lucide-react';
 import Whiteboard from '../components/Whiteboard';
 import KanbanBoard from '../components/KanbanBoard';
@@ -41,10 +41,9 @@ import KnimeOutput from '../components/KnimeOutput';
 import VSCodeSelector from "../components/VSCodeSelector";
 import GoogleColab from '../components/GoogleColab';
 import UserMenu from '../components/UserMenu';
-import NotificationsPopup from '../components/NotificationsPopup';
 import NotificationBell from '../components/NotificationBell';
 import { auth, db, syncUserToDatabase } from "../firebase";
-import { isOwner, ownerUsernames } from "../utils/auth";
+import { isOwner } from "../utils/auth";
 // import { getAnalytics } from "firebase/analytics"; // isko abhi comment kar dein
 
 interface ChatMessage {
@@ -929,7 +928,7 @@ const QuickActions = ({ setActiveTab }: { setActiveTab: (tab: string) => void })
 // Owner usernames (email prefix) - used in isOwner function
 
 // Main component wrapped with Suspense to handle the workStore error
-function HomeContent() {
+function HomeContent(): ReactElement {
   // Live date and time state (must be at the very top)
   const [dateTime, setDateTime] = useState(new Date());
   useEffect(() => {
@@ -979,7 +978,6 @@ function HomeContent() {
 
   // Add state for VS Code tab selection
   const [vsTab, setVsTab] = useState<'advanced' | 'monaco'>('advanced');
-  
   // State for notifications
   const [notifications, setNotifications] = useState<{id: string, message: string, timestamp: any, userEmail?: string}[]>([]);
 
@@ -1034,7 +1032,7 @@ function HomeContent() {
     });
     
     return () => unsubscribe();
-  }, [user]);
+  }, [user, addNotification]); // Added addNotification to dependency array
 
   // Live dashboard stats
   const [projectCount, setProjectCount] = useState<number | null>(null);
