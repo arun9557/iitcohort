@@ -136,7 +136,7 @@ function MasonryGrid({ notes, onEdit, onArchive, onDelete, onRestore, onPin, onR
             <span className="font-semibold text-lg text-gray-900">
               {note.title}
               {isOwner(note.ownerId) && (
-                <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">Owner</span>
+                <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">ADMIN</span>
               )}
             </span>
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
@@ -199,11 +199,10 @@ function AutoExpandTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElem
 }
 
 const ownerUsernames = [
-  'arun2061292007',
   'arunshekhram',
-  'meettomar07',
   'ashishkrs1977',
   'shubham229177',
+  'demo',
 ];
 const isOwner = (user: string) => {
   if (!user) return false;

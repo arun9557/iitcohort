@@ -52,11 +52,10 @@ interface Column {
 
 // Add owner badge logic (reuse from other files)
 const ownerUsernames = [
-  'arun2061292007',
   'arunshekhram',
-  'meettomar07',
   'ashishkrs1977',
   'shubham229177',
+  'demo',
 ];
 const isOwner = (user: string) => {
   if (!user) return false;
@@ -120,7 +119,7 @@ function SortableTask({ task, onClick, columnId }: { task: Task, onClick: (task:
         </span>
         <span className="font-medium text-gray-900">{task.assignee || 'Unassigned'}</span>
         {isOwner(task.assignee) && (
-          <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">Owner</span>
+          <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">ADMIN</span>
         )}
         <Calendar className="w-3 h-3 text-gray-400 ml-3" />
         <span className="text-gray-500">{task.dueDate}</span>
@@ -403,7 +402,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
                 </span>
                 <span className="font-medium text-gray-900">{activeTask.assignee || 'Unassigned'}</span>
                 {isOwner(activeTask.assignee) && (
-                  <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">Owner</span>
+                  <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">ADMIN</span>
                 )}
                 <Calendar className="w-3 h-3 text-gray-400 ml-3" />
                 <span className="text-gray-500">{activeTask.dueDate}</span>

@@ -173,7 +173,7 @@ export default function ProjectTable() {
                 </span>
                 <span className="text-gray-800 font-medium">{project.owner}</span>
                 {isOwner(project.owner) && (
-                  <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">Owner</span>
+                  <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">ADMIN</span>
                 )}
               </div>
               <div className="flex items-center gap-3 mb-1">

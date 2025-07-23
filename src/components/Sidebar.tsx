@@ -31,6 +31,7 @@ export default function Sidebar({ onSelect, activeTab }: SidebarProps) {
     {
       title: 'Development',
       items: [
+        { key: 'colab', icon: '🧪', label: 'Google Colab', color: 'from-orange-400 to-orange-600' },
         { key: 'vscode', icon: '🖥️', label: 'VS Code', color: 'from-gray-400 to-gray-600' },
         { key: 'knime', icon: '🔬', label: 'KNIME Output', color: 'from-teal-400 to-teal-600' },
       ],

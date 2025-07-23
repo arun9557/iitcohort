@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, User, createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, addDoc, onSnapshot, query, orderBy, Timestamp, where } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, Timestamp, where, limit, writeBatch, getDocs } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { 
   Users, 
@@ -39,7 +39,12 @@ import RoomChat from '../components/RoomChat';
 import Library from '../components/Library';
 import KnimeOutput from '../components/KnimeOutput';
 import VSCodeSelector from "../components/VSCodeSelector";
+import GoogleColab from '../components/GoogleColab';
+import UserMenu from '../components/UserMenu';
+import NotificationsPopup from '../components/NotificationsPopup';
+import NotificationBell from '../components/NotificationBell';
 import { auth, db, syncUserToDatabase } from "../firebase";
+import { isOwner, ownerUsernames } from "../utils/auth";
 // import { getAnalytics } from "firebase/analytics"; // isko abhi comment kar dein
 
 interface ChatMessage {
@@ -85,24 +90,6 @@ interface Activity {
   color: string;
 }
 
-// Add this helper at the top (after imports)
-const ownerUsernames = [
-  'arun2061292007',
-  'arunshekhram',
-  'meettomar07',
-  'ashishkrs1977',
-  'shubham229177',
-];
-const isOwner = (user: User | string | null) => {
-  if (!user) return false;
-  let username = '';
-  if (typeof user === 'string') {
-    username = user.includes('@') ? user.split('@')[0] : user;
-  } else if (typeof user === 'object' && user.email) {
-    username = user.email.split('@')[0];
-  }
-  return ownerUsernames.includes(username);
-};
 
 // Feature components
 const ProjectsSection = ({ futureProjects, setActiveTab }: { futureProjects: FutureProject[], setActiveTab: (tab: string) => void }) => {
@@ -337,7 +324,7 @@ const ChatSection: React.FC<ChatSectionProps & { setActiveTab: (tab: string) => 
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium text-sm text-gray-900">{msg.user}
   {isOwner(msg.user) && (
-    <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">Owner</span>
+    <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold border border-yellow-200">ADMIN</span>
   )}
 </span>
               <span className="text-xs text-gray-500">
@@ -989,18 +976,65 @@ function HomeContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [authError, setAuthError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [notifications, setNotifications] = useState<string[]>([]);
 
   // Add state for VS Code tab selection
   const [vsTab, setVsTab] = useState<'advanced' | 'monaco'>('advanced');
+  
+  // State for notifications
+  const [notifications, setNotifications] = useState<{id: string, message: string, timestamp: any, userEmail?: string}[]>([]);
 
-  // Add notification function
-  const addNotification = (message: string) => {
-    setNotifications(prev => [...prev, message]);
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n !== message));
-    }, 5000);
+  // Add notification to Firestore
+  const addNotification = async (message: string) => {
+    if (!user) return;
+    
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        message,
+        timestamp: Timestamp.now(),
+        userId: user.uid,
+        userEmail: user.email
+      });
+    } catch (error) {
+      console.error('Error adding notification:', error);
+    }
   };
+
+  const clearNotifications = async () => {
+    try {
+      // Delete all notifications
+      const notificationsSnapshot = await getDocs(collection(db, 'notifications'));
+      const batch = writeBatch(db);
+      notificationsSnapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+    }
+  };
+
+  // Listen for notifications
+  useEffect(() => {
+    if (!user) return;
+    
+    const q = query(
+      collection(db, 'notifications'),
+      orderBy('timestamp', 'desc'),
+      limit(10) // Only keep the 10 most recent notifications
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notificationsList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        message: doc.data().message,
+        timestamp: doc.data().timestamp,
+        userEmail: doc.data().userEmail
+      }));
+      setNotifications(notificationsList);
+    });
+    
+    return () => unsubscribe();
+  }, [user]);
 
   // Live dashboard stats
   const [projectCount, setProjectCount] = useState<number | null>(null);
@@ -1133,6 +1167,21 @@ function HomeContent() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      setUser(null);
+      addNotification("You've been logged out.");
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      addNotification("Error logging out.");
+    }
+  };
+
+  const handleSwitchAccount = () => {
+    setUser(null); // This will show the login form
   };
 
   const renderTabContent = () => {
@@ -1333,6 +1382,8 @@ function HomeContent() {
         );
       case 'knime':
         return <KnimeOutput />;
+      case 'colab':
+        return <GoogleColab />;
       case 'vscode':
         return (
           <div className="flex flex-col flex-1 min-h-0 h-full w-full overflow-hidden" style={{padding: 0, margin: 0}}>
@@ -1538,45 +1589,31 @@ function HomeContent() {
             </div>
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
               </button>
-              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <button className="text-gray-500 hover:text-gray-900">
                 <Search className="w-5 h-5" />
               </button>
-              {/* Notification Bell and List */}
-              <div className="relative">
-                <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors relative">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
-                </button>
-                {/* Notification dropdown/list here (existing code) */}
-                {/* Add Notification form/button only for owners */}
-                {isOwner(user) && (
-                  <button
-                    className="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                    onClick={() => {/* open notification form/modal logic here */}}
-                  >
-                    Add Notification
-                  </button>
-                )}
-              </div>
-              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              {/* Notification Bell - Visible to all users */}
+              <NotificationBell
+                notifications={notifications}
+                onClear={clearNotifications}
+                onAddNotification={(message) => {
+                  if (isOwner(user)) {
+                    addNotification(message);
+                  }
+                }}
+                user={user}
+              />
+              <button className="text-gray-500 hover:text-gray-900">
                 <Settings className="w-5 h-5" />
               </button>
-              <div className="w-px h-6 bg-gray-300"></div>
-              {/* User Profile Dropdown */}
-              <div className="relative group">
-                <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {user.email?.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <span className="font-medium">{user.email?.split('@')[0]}</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-              </button>
-                {/* Dropdown Menu */}
-              </div>
+              <div className="w-px h-6 bg-gray-200"></div>
+              {user && (
+                <UserMenu 
+                  user={user}
+                  onLogout={handleLogout}
+                  onSwitchAccount={handleSwitchAccount}
+                />
+              )}
             </div>
           </div>
         </header>
@@ -1623,7 +1660,10 @@ function HomeContent() {
                   <span className="text-green-600">✓</span>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{notification}</p>
+                  <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                  {notification.userEmail && (
+                    <p className="text-xs text-gray-500">From: {notification.userEmail}</p>
+                  )}
                 </div>
                 <button
                   onClick={() => setNotifications(prev => prev.filter((_, i) => i !== index))}

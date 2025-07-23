@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { collection, addDoc, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Send } from 'lucide-react';
+import { isOwner } from '../utils/auth';
 
 interface Message {
   id: string;
@@ -40,27 +41,17 @@ export default function RoomChat({ roomId, currentUser }: { roomId: string; curr
     setMessage('');
   };
 
-  // List of allowed owners (usernames)
-  const ownerUsernames = [
-    'arun2061292007',
-    'arunshekhram',
-    'meettomar07',
-    'ashishkrs1977',
-    'shubham229177',
-  ];
-
-  // Helper to check if a user is owner (by username or email)
-  const isOwner = (user: string) => {
-    if (!user) return false;
-    // Check for username
-    if (ownerUsernames.includes(user)) return true;
-    // Check for email (username part)
-    if (user.includes('@')) {
-      const uname = user.split('@')[0];
-      if (ownerUsernames.includes(uname)) return true;
+  // Debug: Log message info including admin status when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      console.log('Current messages in RoomChat:', messages);
+      messages.forEach(msg => {
+        console.log(`Message from ${msg.user}, isAdmin: ${isOwner(msg.user)}`);
+      });
     }
-    return false;
-  };
+  }, [messages]);
+
+  // isOwner function is imported from auth utility
 
   return (
     <div className="bg-gray-50 rounded-xl shadow p-4 flex flex-col h-full border border-gray-200 relative">
@@ -73,7 +64,7 @@ export default function RoomChat({ roomId, currentUser }: { roomId: string; curr
             <div className="bg-white rounded-2xl shadow-sm px-4 py-2 max-w-[80%] hover:shadow-md transition-all border border-gray-100 flex items-center gap-2">
               <span className="font-semibold text-blue-600">{msg.user}</span>
               {isOwner(msg.user) && (
-                <span className="ml-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold border border-yellow-200">Owner</span>
+                <span className="ml-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold border border-yellow-200">ADMIN</span>
               )}
               <span className="mx-2 text-gray-300">|</span>
               <span className="text-gray-900">{msg.text}</span>
