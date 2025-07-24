@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import io from 'socket.io-client';
+import Peer from 'simple-peer';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { isOwner } from '../utils/auth';
+
+const socket = io('http://localhost:5000'); // Apne signaling server ka URL
 
 interface Member {
   uid: string;
@@ -18,9 +22,9 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
   // Local mute state for each member (UI only)
   const [muted, setMuted] = useState<{ [uid: string]: boolean }>({});
 
-  const toggleMute = useCallback((uid: string) => {
-    setMuted(prev => ({ ...prev, [uid]: !prev[uid] }));
-  }, []);
+  const userAudio = useRef();
+  const peersRef = useRef([]);
+  const [stream, setStream] = useState(null);
 
   useEffect(() => {
     // Fetch users from Firestore
@@ -45,6 +49,93 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
     
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    // Sirf current user ke liye mic logic
+    if (!currentUserId) return;
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      setStream(stream);
+      userAudio.current.srcObject = stream;
+      socket.emit('join-room', 'members-audio-room', currentUserId);
+
+      socket.on('user-connected', (otherUserId) => {
+        const peer = createPeer(otherUserId, socket.id, stream);
+        peersRef.current.push({ peerID: otherUserId, peer });
+      });
+
+      socket.on('signal', ({ userId: from, signal }) => {
+        const item = peersRef.current.find(p => p.peerID === from);
+        if (item) {
+          item.peer.signal(signal);
+        } else {
+          const peer = addPeer(signal, from, stream);
+          peersRef.current.push({ peerID: from, peer });
+        }
+      });
+
+      socket.on('user-disconnected', (id) => {
+        const peerObj = peersRef.current.find(p => p.peerID === id);
+        if (peerObj) {
+          peerObj.peer.destroy();
+        }
+        peersRef.current = peersRef.current.filter(p => p.peerID !== id);
+      });
+    });
+  }, [currentUserId]);
+
+  function createPeer(userToSignal, callerID, stream) {
+    const peer = new Peer({
+      initiator: true,
+      trickle: false,
+      stream
+    });
+
+    peer.on('signal', signal => {
+      socket.emit('signal', { userId: userToSignal, signal });
+    });
+
+    peer.on('stream', remoteStream => {
+      // Play remote audio
+      const audio = document.createElement('audio');
+      audio.srcObject = remoteStream;
+      audio.autoplay = true;
+      document.body.appendChild(audio);
+    });
+
+    return peer;
+  }
+
+  function addPeer(incomingSignal, callerID, stream) {
+    const peer = new Peer({
+      initiator: false,
+      trickle: false,
+      stream
+    });
+
+    peer.on('signal', signal => {
+      socket.emit('signal', { userId: callerID, signal });
+    });
+
+    peer.on('stream', remoteStream => {
+      // Play remote audio
+      const audio = document.createElement('audio');
+      audio.srcObject = remoteStream;
+      audio.autoplay = true;
+      document.body.appendChild(audio);
+    });
+
+    peer.signal(incomingSignal);
+
+    return peer;
+  }
+
+  // Mute/unmute logic
+  const toggleMute = (uid: string) => {
+    if (stream) {
+      stream.getAudioTracks()[0].enabled = !stream.getAudioTracks()[0].enabled;
+      setMuted(prev => ({ ...prev, [uid]: !prev[uid] }));
+    }
+  };
   
   if (loading) {
     return <div>Loading members...</div>;
@@ -147,6 +238,7 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
           );
         })}
       </ul>
+      <audio ref={userAudio} autoPlay muted />
     </div>
   );
 } 
