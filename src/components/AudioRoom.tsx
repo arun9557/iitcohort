@@ -1,5 +1,5 @@
 // src/components/AudioRoom.tsx
-import React, { useEffect, useRef, useState, RefObject } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 import Peer, { Instance as PeerInstance } from 'simple-peer';
 
@@ -16,7 +16,6 @@ interface PeerRef {
 }
 
 function AudioRoom({ roomId, userId }: AudioRoomProps) {
-  const [peers, setPeers] = useState<PeerInstance[]>([]);
   const userAudio = useRef<HTMLAudioElement | null>(null);
   const peersRef = useRef<PeerRef[]>([]);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -31,17 +30,18 @@ function AudioRoom({ roomId, userId }: AudioRoomProps) {
       socket.on('user-connected', (otherUserId: string) => {
         const peer = createPeer(otherUserId, socket.id || '', stream);
         peersRef.current.push({ peerID: otherUserId, peer });
-        setPeers((users) => [...users, peer]);
+        // setPeers((users) => [...users, peer]); // removed unused
       });
 
-      socket.on('signal', ({ userId: from, signal }: { userId: string; signal: any }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      socket.on('signal', ({ userId: from, signal }: { userId: string; signal: unknown }) => {
         const item = peersRef.current.find((p) => p.peerID === from);
         if (item) {
-          item.peer.signal(signal);
+          item.peer.signal(signal as Peer.SignalData);
         } else {
-          const peer = addPeer(signal, from, stream);
+          const peer = addPeer(signal as Peer.SignalData, from, stream);
           peersRef.current.push({ peerID: from, peer });
-          setPeers((users) => [...users, peer]);
+          // setPeers((users) => [...users, peer]); // removed unused
         }
       });
 
@@ -51,7 +51,7 @@ function AudioRoom({ roomId, userId }: AudioRoomProps) {
           peerObj.peer.destroy();
         }
         peersRef.current = peersRef.current.filter((p) => p.peerID !== id);
-        setPeers((users) => users.filter((p) => (p as any).peerID !== id));
+        // setPeers((users) => users.filter((p) => (p as any).peerID !== id)); // removed unused
       });
     });
   }, [roomId, userId]);
@@ -63,7 +63,8 @@ function AudioRoom({ roomId, userId }: AudioRoomProps) {
       stream,
     });
 
-    peer.on('signal', (signal: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    peer.on('signal', (signal: unknown) => {
       socket.emit('signal', { userId: userToSignal, signal });
     });
 
@@ -77,14 +78,15 @@ function AudioRoom({ roomId, userId }: AudioRoomProps) {
     return peer;
   }
 
-  function addPeer(incomingSignal: any, callerID: string, stream: MediaStream) {
+  function addPeer(incomingSignal: unknown, callerID: string, stream: MediaStream) {
     const peer = new Peer({
       initiator: false,
       trickle: false,
       stream,
     });
 
-    peer.on('signal', (signal: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    peer.on('signal', (signal: unknown) => {
       socket.emit('signal', { userId: callerID, signal });
     });
 
@@ -95,7 +97,7 @@ function AudioRoom({ roomId, userId }: AudioRoomProps) {
       document.body.appendChild(audio);
     });
 
-    peer.signal(incomingSignal);
+    peer.signal(incomingSignal as Peer.SignalData);
 
     return peer;
   }

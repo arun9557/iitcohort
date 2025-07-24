@@ -45,7 +45,6 @@ import NotificationBell from '../components/NotificationBell';
 import { auth, db, syncUserToDatabase } from "../firebase";
 import { isOwner } from "../utils/auth";
 // import { getAnalytics } from "firebase/analytics"; // isko abhi comment kar dein
-import AudioRoom from '../components/AudioRoom';
 
 interface ChatMessage {
   id: string;
