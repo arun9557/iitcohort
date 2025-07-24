@@ -22,9 +22,9 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
   // Local mute state for each member (UI only)
   const [muted, setMuted] = useState<{ [uid: string]: boolean }>({});
 
-  const userAudio = useRef();
-  const peersRef = useRef([]);
-  const [stream, setStream] = useState(null);
+  const userAudio = useRef<HTMLAudioElement | null>(null);
+  const peersRef = useRef<{ peerID: string; peer: any }[]>([]);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
     // Fetch users from Firestore
@@ -55,12 +55,16 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
     if (!currentUserId) return;
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
       setStream(stream);
-      userAudio.current.srcObject = stream;
+      if (userAudio.current) {
+        userAudio.current.srcObject = stream;
+      }
       socket.emit('join-room', 'members-audio-room', currentUserId);
 
-      socket.on('user-connected', (otherUserId) => {
-        const peer = createPeer(otherUserId, socket.id, stream);
-        peersRef.current.push({ peerID: otherUserId, peer });
+      socket.on('user-connected', (otherUserId: string) => {
+        if (otherUserId) {
+          const peer = createPeer(otherUserId, socket.id || 'unknown', stream);
+          peersRef.current.push({ peerID: otherUserId, peer });
+        }
       });
 
       socket.on('signal', ({ userId: from, signal }) => {
@@ -83,7 +87,7 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
     });
   }, [currentUserId]);
 
-  function createPeer(userToSignal, callerID, stream) {
+  function createPeer(userToSignal: string, callerID: string, stream: MediaStream) {
     const peer = new Peer({
       initiator: true,
       trickle: false,
@@ -105,7 +109,7 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
     return peer;
   }
 
-  function addPeer(incomingSignal, callerID, stream) {
+  function addPeer(incomingSignal: any, callerID: string, stream: MediaStream) {
     const peer = new Peer({
       initiator: false,
       trickle: false,
