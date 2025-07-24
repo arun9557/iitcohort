@@ -55,84 +55,244 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
   }, []);
 
   useEffect(() => {
-    // Sirf current user ke liye mic logic
+    // Only run for current user
     if (!currentUserId) return;
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-      setStream(stream);
-      if (userAudio.current) {
-        userAudio.current.srcObject = stream;
+    
+    let userStream: MediaStream | null = null;
+    
+    const setupMedia = async () => {
+      try {
+        // Request microphone access
+        userStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          } 
+        });
+        
+        console.log('Got user media stream', userStream);
+        setStream(userStream);
+        
+        // Create audio element for local preview (muted)
+        if (!userAudio.current) {
+          const audio = document.createElement('audio');
+          audio.muted = true; // Mute local audio to prevent echo
+          audio.autoplay = true;
+          document.body.appendChild(audio);
+          userAudio.current = audio;
+        }
+        userAudio.current.srcObject = userStream;
+        
+        // Join the room after getting media access
+        socket.emit('join-room', 'members-audio-room', currentUserId);
+        console.log('Joined room with ID:', currentUserId);
+        
+      } catch (err) {
+        console.error('Error accessing microphone:', err);
       }
-      socket.emit('join-room', 'members-audio-room', currentUserId);
-
-      socket.on('user-connected', (otherUserId: string) => {
-        if (otherUserId) {
-          const peer = createPeer(otherUserId, socket.id || 'unknown', stream);
-          peersRef.current.push({ peerID: otherUserId, peer });
-        }
+    };
+    
+    setupMedia();
+    
+    // Set up socket event listeners
+    const handleUserConnected = (otherUserId: string) => {
+      if (!userStream || !otherUserId) return;
+      
+      console.log('User connected:', otherUserId);
+      if (otherUserId !== currentUserId) {  // Don't connect to self
+        const peer = createPeer(otherUserId, socket.id || 'unknown', userStream);
+        peersRef.current = [...peersRef.current, { peerID: otherUserId, peer }];
+        console.log('Created peer for user:', otherUserId);
+      }
+    };
+    
+    const handleSignal = ({ userId: from, signal }: { userId: string; signal: any }) => {
+      if (!userStream || !from) return;
+      
+      console.log('Received signal from:', from);
+      const existingPeer = peersRef.current.find(p => p.peerID === from);
+      
+      if (existingPeer) {
+        console.log('Signaling existing peer:', from);
+        existingPeer.peer.signal(signal);
+      } else if (from !== currentUserId) {  // Don't connect to self
+        console.log('Adding new peer from signal:', from);
+        const peer = addPeer(signal, from, userStream);
+        peersRef.current = [...peersRef.current, { peerID: from, peer }];
+      }
+    };
+    
+    const handleUserDisconnected = (id: string) => {
+      console.log('User disconnected:', id);
+      const peerObj = peersRef.current.find(p => p.peerID === id);
+      if (peerObj) {
+        console.log('Destroying peer:', id);
+        peerObj.peer.destroy();
+      }
+      peersRef.current = peersRef.current.filter(p => p.peerID !== id);
+    };
+    
+    // Set up socket listeners
+    socket.on('user-connected', handleUserConnected);
+    socket.on('signal', handleSignal);
+    socket.on('user-disconnected', handleUserDisconnected);
+    
+    // Cleanup function
+    return () => {
+      console.log('Cleaning up...');
+      socket.off('user-connected', handleUserConnected);
+      socket.off('signal', handleSignal);
+      socket.off('user-disconnected', handleUserDisconnected);
+      
+      // Stop all tracks in the stream
+      if (userStream) {
+        userStream.getTracks().forEach(track => track.stop());
+      }
+      
+      // Clean up all peer connections
+      peersRef.current.forEach(({ peer }) => {
+        if (peer.destroy) peer.destroy();
       });
-
-      socket.on('signal', ({ userId: from, signal }) => {
-        const item = peersRef.current.find(p => p.peerID === from);
-        if (item) {
-          item.peer.signal(signal);
-        } else {
-          const peer = addPeer(signal, from, stream);
-          peersRef.current.push({ peerID: from, peer });
+      peersRef.current = [];
+      
+      // Clean up audio element
+      if (userAudio.current) {
+        userAudio.current.pause();
+        if (userAudio.current.parentNode) {
+          userAudio.current.parentNode.removeChild(userAudio.current);
         }
-      });
-
-      socket.on('user-disconnected', (id) => {
-        const peerObj = peersRef.current.find(p => p.peerID === id);
-        if (peerObj) {
-          peerObj.peer.destroy();
-        }
-        peersRef.current = peersRef.current.filter(p => p.peerID !== id);
-      });
-    });
+        userAudio.current = null;
+      }
+    };
   }, [currentUserId]);
 
   function createPeer(userToSignal: string, callerID: string, stream: MediaStream) {
+    console.log('Creating peer to signal:', userToSignal);
+    
     const peer = new Peer({
       initiator: true,
       trickle: false,
-      stream
+      stream,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+      }
     });
 
     peer.on('signal', signal => {
-      socket.emit('signal', { userId: userToSignal, signal });
+      console.log('Sending signal to:', userToSignal);
+      socket.emit('signal', { 
+        userId: userToSignal, 
+        signal,
+        from: currentUserId
+      });
     });
 
     peer.on('stream', remoteStream => {
-      // Play remote audio
+      console.log('Received remote stream from:', userToSignal);
+      
+      // Create audio element for remote stream
       const audio = document.createElement('audio');
-      audio.srcObject = remoteStream;
+      audio.id = `audio-${userToSignal}`;
       audio.autoplay = true;
+      audio.setAttribute('playsinline', ''); // For iOS compatibility
+      audio.srcObject = remoteStream;
+      
+      // Add to DOM but keep it hidden (we just want the audio)
+      audio.style.display = 'none';
       document.body.appendChild(audio);
+      
+      // Handle when audio starts playing
+      const onPlaying = () => {
+        console.log('Playing audio from:', userToSignal);
+        audio.removeEventListener('playing', onPlaying);
+      };
+      audio.addEventListener('playing', onPlaying);
+    });
+    
+    peer.on('error', err => {
+      console.error('Peer error:', err);
+    });
+    
+    peer.on('connect', () => {
+      console.log('Peer connected to:', userToSignal);
     });
 
     return peer;
   }
 
   function addPeer(incomingSignal: Peer.SignalData, callerID: string, stream: MediaStream) {
+    console.log('Adding peer from signal:', callerID);
+    
     const peer = new Peer({
       initiator: false,
       trickle: false,
-      stream
+      stream,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+      }
     });
 
     peer.on('signal', signal => {
-      socket.emit('signal', { userId: callerID, signal });
+      console.log('Sending signal back to:', callerID);
+      socket.emit('signal', { 
+        userId: callerID, 
+        signal,
+        from: currentUserId
+      });
     });
 
     peer.on('stream', remoteStream => {
-      // Play remote audio
+      console.log('Received remote stream from:', callerID);
+      
+      // Remove any existing audio element for this peer
+      const existingAudio = document.getElementById(`audio-${callerID}`);
+      if (existingAudio) {
+        existingAudio.remove();
+      }
+      
+      // Create new audio element for remote stream
       const audio = document.createElement('audio');
-      audio.srcObject = remoteStream;
+      audio.id = `audio-${callerID}`;
       audio.autoplay = true;
+      audio.setAttribute('playsinline', ''); // For iOS compatibility
+      audio.srcObject = remoteStream;
+      
+      // Add to DOM but keep it hidden (we just want the audio)
+      audio.style.display = 'none';
       document.body.appendChild(audio);
+      
+      // Handle when audio starts playing
+      const onPlaying = () => {
+        console.log('Playing audio from:', callerID);
+        audio.removeEventListener('playing', onPlaying);
+      };
+      audio.addEventListener('playing', onPlaying);
+    });
+    
+    peer.on('error', err => {
+      console.error('Peer error:', err);
+    });
+    
+    peer.on('connect', () => {
+      console.log('Peer connected from:', callerID);
     });
 
-    peer.signal(incomingSignal);
+    // Handle the incoming signal
+    try {
+      console.log('Processing incoming signal from:', callerID);
+      peer.signal(incomingSignal);
+    } catch (err) {
+      console.error('Error processing signal:', err);
+    }
 
     return peer;
   }
