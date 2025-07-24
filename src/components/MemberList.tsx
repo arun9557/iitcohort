@@ -23,7 +23,11 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
   const [muted, setMuted] = useState<{ [uid: string]: boolean }>({});
 
   const userAudio = useRef<HTMLAudioElement | null>(null);
-  const peersRef = useRef<{ peerID: string; peer: any }[]>([]);
+  interface PeerConnection {
+    peerID: string;
+    peer: Peer.Instance;
+  }
+  const peersRef = useRef<PeerConnection[]>([]);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
@@ -109,7 +113,7 @@ export default function MemberList({ currentUserId }: { currentUserId: string })
     return peer;
   }
 
-  function addPeer(incomingSignal: any, callerID: string, stream: MediaStream) {
+  function addPeer(incomingSignal: Peer.SignalData, callerID: string, stream: MediaStream) {
     const peer = new Peer({
       initiator: false,
       trickle: false,
