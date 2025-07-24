@@ -1428,6 +1428,7 @@ function HomeContent(): ReactElement {
 
   if (!user) {
     return (
+<<<<<<< HEAD
     <div
       className="min-h-screen flex items-center justify-end pr-12 bg-gradient-to-br from-blue-50 to-indigo-100"
       style={{
@@ -1446,6 +1447,18 @@ function HomeContent(): ReactElement {
           <h1 className="text-3xl font-bold mb-2 text-gray-900">IITCohort</h1>
           <p className="text-gray-600">Smart Batch Collaboration Platform</p>
         </div>
+=======
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full mx-4"
+        >
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-2 text-gray-900">IITCohort</h1>
+            <p className="text-gray-600">Smart Batch Collaboration Platform</p>
+          </div>
+>>>>>>> main
           
           {/* Authentication Form */}
           <form onSubmit={handleAuth} className="space-y-4">
@@ -1540,7 +1553,11 @@ function HomeContent(): ReactElement {
                 setPassword('');
                 setConfirmPassword('');
               }}
+<<<<<<< HEAD
               className="text-sm font-medium text-blue-700 hover:text-blue-900"
+=======
+              className="text-sm font-medium text-blue-600 hover:text-blue-500"
+>>>>>>> main
             >
               {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
             </button>
