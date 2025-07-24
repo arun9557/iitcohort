@@ -26,9 +26,6 @@ const nextConfig: NextConfig = {
     return config;
   },
   
-  // Enable SWC minification
-  swcMinify: true,
-  
   // Configure images
   images: {
     domains: ['localhost'],
