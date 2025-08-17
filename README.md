@@ -1,5 +1,6 @@
 IITCohort - Ultimate Collaboration Platform
 IITCohort is a modern, all-in-one collaboration platform designed specifically for the students of IIT Jodhpur's AI Applied batch to collaborate, innovate, and build together. Inspired by Notion, Discord, Google Meet, Whiteboard, and Trello, it empowers teams to communicate, manage projects, and collaborate seamlessly with a rich set of features, built using cutting-edge technologies. This platform serves as a dedicated space where all students can connect, share ideas, and work together on projects.
+LINK IS HERE - https://iitcohort.vercel.app/
 🌟 Features
 
 🔐 Authentication: Secure sign-in with Firebase Authentication (Google Sign-in supported).
