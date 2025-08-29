@@ -44,7 +44,7 @@ This project is licensed under the MIT License. Feel free to use, modify, and di
 🙌 Acknowledgments
 
 Inspired by Notion, Discord, Google Meet, Whiteboard, and Trello.
-Built with ❤️ by the IIT Jodhpur AI Applied batch and the open-source community.
+Built with ❤️ by the IIT Jodhpur AI Applied batch and the open-source community. - 
 
 📬 Contact
 For questions or support, open an issue on the GitHub repository or reach out to the maintainers.
