@@ -6,7 +6,9 @@ interface VoiceChatState {
   isConnected: boolean;
   isMuted: boolean;
   isSpeaking: Record<string, boolean>;
-  participants: string[];
+  participants: Record<string, MediaStream>;
+  connectionStates: Record<string, RTCPeerConnectionState>;
+  onlineUsers: string[];
 }
 
 export function useVoiceChat(roomId: string, userId: string, participantIds: string[]) {
@@ -14,12 +16,15 @@ export function useVoiceChat(roomId: string, userId: string, participantIds: str
     isConnected: false,
     isMuted: false,
     isSpeaking: {},
-    participants: [],
+    participants: {},
+    connectionStates: {},
+    onlineUsers: [],
   });
 
   const rtcService = useRef<WebRTCService | null>(null);
   const signalingService = useRef<FirebaseSignalingService | null>(null);
   const audioElements = useRef<Record<string, HTMLAudioElement>>({});
+  const speakingInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize services
   useEffect(() => {
@@ -27,6 +32,9 @@ export function useVoiceChat(roomId: string, userId: string, participantIds: str
     signalingService.current = new FirebaseSignalingService(roomId, userId);
     
     return () => {
+      if (speakingInterval.current) {
+        clearInterval(speakingInterval.current);
+      }
       rtcService.current?.stopLocalStream();
       rtcService.current?.closeAllConnections();
       signalingService.current?.cleanup();
@@ -35,30 +43,69 @@ export function useVoiceChat(roomId: string, userId: string, participantIds: str
 
   // Handle incoming signals
   useEffect(() => {
-    if (!signalingService.current) return;
+    if (!signalingService.current || !rtcService.current) return;
 
     const handleSignal = async (signal: any) => {
       if (!rtcService.current) return;
 
-      switch (signal.type) {
-        case 'offer':
-          const answer = await rtcService.current.createAnswer(signal.from, signal.data.sdp);
-          signalingService.current?.sendAnswer(signal.from, answer);
-          break;
-        case 'answer':
-          await rtcService.current.setRemoteDescription(signal.from, signal.data.sdp);
-          break;
-        case 'candidate':
-          await rtcService.current.addIceCandidate(signal.from, signal.data);
-          break;
-        case 'hangup':
-          rtcService.current.closePeerConnection(signal.from);
-          break;
+      try {
+        switch (signal.type) {
+          case 'offer':
+            const answer = await rtcService.current.createAnswer(signal.from, signal.data);
+            await signalingService.current?.sendAnswer(signal.from, answer);
+            break;
+          case 'answer':
+            await rtcService.current.setRemoteDescription(signal.from, signal.data);
+            break;
+          case 'candidate':
+            await rtcService.current.addIceCandidate(signal.from, signal.data);
+            break;
+          case 'hangup':
+            rtcService.current.closePeerConnection(signal.from);
+            setState(prev => ({
+              ...prev,
+              participants: { ...prev.participants, [signal.from]: undefined as any },
+              connectionStates: { ...prev.connectionStates, [signal.from]: 'closed' }
+            }));
+            break;
+          case 'user-joined':
+            if (signal.data.userId !== userId) {
+              setState(prev => ({
+                ...prev,
+                onlineUsers: [...prev.onlineUsers.filter(id => id !== signal.data.userId), signal.data.userId]
+              }));
+            }
+            break;
+          case 'user-left':
+            setState(prev => ({
+              ...prev,
+              onlineUsers: prev.onlineUsers.filter(id => id !== signal.data.userId),
+              participants: { ...prev.participants, [signal.data.userId]: undefined as any }
+            }));
+            break;
+        }
+      } catch (error) {
+        console.error('Error handling signal:', error);
       }
     };
 
+    const handlePresenceChange = (userId: string, isOnline: boolean) => {
+      setState(prev => ({
+        ...prev,
+        onlineUsers: isOnline 
+          ? [...prev.onlineUsers.filter(id => id !== userId), userId]
+          : prev.onlineUsers.filter(id => id !== userId)
+      }));
+    };
+
     signalingService.current.initialize();
-    return signalingService.current.onSignal(handleSignal);
+    const unsubscribeSignal = signalingService.current.onSignal(handleSignal);
+    const unsubscribePresence = signalingService.current.onPresenceChange(handlePresenceChange);
+
+    return () => {
+      unsubscribeSignal();
+      unsubscribePresence();
+    };
   }, [userId]);
 
   // Connect to voice chat
@@ -68,16 +115,46 @@ export function useVoiceChat(roomId: string, userId: string, participantIds: str
     try {
       await rtcService.current.initializeLocalStream();
       setState(prev => ({ ...prev, isConnected: true }));
+
+      // Broadcast user joined
+      await signalingService.current.broadcastUserJoined();
+
+      // Start calls with all participants
+      participantIds.forEach(participantId => {
+        if (participantId !== userId) {
+          startCall(participantId);
+        }
+      });
+
+      // Start speaking detection
+      startSpeakingDetection();
     } catch (error) {
       console.error('Failed to connect to voice chat:', error);
+      throw error;
     }
-  }, []);
+  }, [participantIds, userId]);
 
   // Disconnect from voice chat
-  const disconnect = useCallback(() => {
+  const disconnect = useCallback(async () => {
+    if (speakingInterval.current) {
+      clearInterval(speakingInterval.current);
+      speakingInterval.current = null;
+    }
+
+    // Broadcast user left
+    if (signalingService.current) {
+      await signalingService.current.broadcastUserLeft();
+    }
+
     rtcService.current?.stopLocalStream();
     rtcService.current?.closeAllConnections();
-    setState(prev => ({ ...prev, isConnected: false }));
+    setState(prev => ({ 
+      ...prev, 
+      isConnected: false,
+      participants: {},
+      connectionStates: {},
+      isSpeaking: {}
+    }));
   }, []);
 
   // Toggle mute
@@ -99,6 +176,50 @@ export function useVoiceChat(roomId: string, userId: string, participantIds: str
     } catch (error) {
       console.error('Failed to start call:', error);
     }
+  }, []);
+
+  // Start speaking detection
+  const startSpeakingDetection = useCallback(() => {
+    if (speakingInterval.current) {
+      clearInterval(speakingInterval.current);
+    }
+
+    speakingInterval.current = setInterval(() => {
+      if (rtcService.current) {
+        const isSpeaking = rtcService.current.isSpeaking();
+        setState(prev => ({
+          ...prev,
+          isSpeaking: { ...prev.isSpeaking, [userId]: isSpeaking }
+        }));
+      }
+    }, 100);
+  }, [userId]);
+
+  // Handle incoming tracks
+  useEffect(() => {
+    if (!rtcService.current) return;
+
+    const handleTrack = (stream: MediaStream, userId: string) => {
+      setState(prev => ({
+        ...prev,
+        participants: { ...prev.participants, [userId]: stream }
+      }));
+    };
+
+    const handleConnectionStateChange = (state: RTCPeerConnectionState, userId: string) => {
+      setState(prev => ({
+        ...prev,
+        connectionStates: { ...prev.connectionStates, [userId]: state }
+      }));
+    };
+
+    const unsubscribeTrack = rtcService.current.onTrack(handleTrack);
+    const unsubscribeConnectionState = rtcService.current.onConnectionStateChange(handleConnectionStateChange);
+
+    return () => {
+      unsubscribeTrack();
+      unsubscribeConnectionState();
+    };
   }, []);
 
   return {
