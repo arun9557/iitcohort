@@ -129,7 +129,7 @@ export default function MemberList({ currentUserId }: MemberListProps) {
       peersRef.current = [...peersRef.current, { peerID: otherUserId, peer }];
     };
 
-    const handleIncomingSignal = (payload: { signal: any; callerID: string }) => {
+    const handleIncomingSignal = (payload: { signal: unknown; callerID: string }) => {
       const { signal, callerID } = payload;
       console.log('Received signal from:', callerID);
       
@@ -193,7 +193,7 @@ export default function MemberList({ currentUserId }: MemberListProps) {
       socket.off('receive-signal', handleIncomingSignal);
       socket.off('user-disconnected', handleUserDisconnected);
     };
-  }, [stream, currentUserId]);
+  }, [stream, currentUserId, addPeer, createPeer]);
 
   // Create a peer connection
   const createPeer = (userToSignal: string, callerID: string, stream: MediaStream) => {
