@@ -9,7 +9,7 @@ import { ParticipantAudio } from './ParticipantAudio';
 interface VoiceChatIntegrationProps {
   roomId: string;
   userId: string;
-  userDisplayName: string;
+  userDisplayName?: string;
   userPhotoURL?: string;
   participantIds: string[];
   participants: Array<{
@@ -42,31 +42,6 @@ export function VoiceChatIntegration({
     toggleMute
   } = useVoiceChat(roomId, userId, participantIds);
 
-  const handleConnect = async () => {
-    try {
-      setError(null);
-      await connect();
-    } catch (error) {
-      console.error('Failed to connect to voice chat:', error);
-      setError('Failed to connect to voice chat. Please check your microphone permissions.');
-    }
-  };
-
-  const handleDisconnect = async () => {
-    try {
-      await disconnect();
-    } catch (error) {
-      console.error('Failed to disconnect from voice chat:', error);
-    }
-  };
-
-  const handleToggleMute = () => {
-    try {
-      toggleMute();
-    } catch (error) {
-      console.error('Failed to toggle mute:', error);
-    }
-  };
 
   return (
     <VStack gap={4} align="stretch">
@@ -129,7 +104,6 @@ export function VoiceChatIntegration({
           <HStack gap={2} wrap="wrap">
             {participants.map((participant) => {
               const connectionState = connectionStates[participant.id];
-              const isOnline = onlineUsers.includes(participant.id);
               const isParticipantSpeaking = isSpeaking[participant.id];
               
               return (
@@ -194,15 +168,15 @@ export function VoiceChatIntegration({
         <Text fontSize="sm" color="gray.700">
           <strong>How to use:</strong>
           <br />
-          1. Click "Join Voice" to start voice chat
+          1. Click &quot;Join Voice&quot; to start voice chat
           <br />
           2. Allow microphone access when prompted
           <br />
-          3. Use "Mute/Unmute" to control your microphone
+          3. Use &quot;Mute/Unmute&quot; to control your microphone
           <br />
           4. Green indicators show when someone is speaking
           <br />
-          5. Click "Leave Voice" to disconnect
+          5. Click &quot;Leave Voice&quot; to disconnect
         </Text>
       </Box>
     </VStack>

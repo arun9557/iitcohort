@@ -7,7 +7,7 @@ interface Signal {
   type: SignalType;
   from: string;
   to: string;
-  data: any;
+  data: unknown;
   timestamp: number;
   id?: string;
 }
@@ -71,7 +71,7 @@ export class FirebaseSignalingService {
       const presence = snapshot.val() || {};
       Object.entries(presence).forEach(([userId, userData]) => {
         if (userId !== this.userId) {
-          const isOnline = (userData as any)?.online === true;
+          const isOnline = (userData as { online?: boolean })?.online === true;
           this.presenceListeners.forEach(callback => callback(userId, isOnline));
         }
       });
@@ -110,7 +110,7 @@ export class FirebaseSignalingService {
   }
 
   // Send a signal to a specific user
-  async sendSignal(type: SignalType, to: string, data: any) {
+  async sendSignal(type: SignalType, to: string, data: unknown) {
     if (!this.signalRef) return;
 
     const signal: Signal = {

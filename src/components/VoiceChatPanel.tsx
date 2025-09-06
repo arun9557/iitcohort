@@ -1,4 +1,4 @@
-import { VStack, Heading, SimpleGrid, Box, Text, Button } from '@chakra-ui/react';
+import { VStack, Heading, SimpleGrid, Box, Button } from '@chakra-ui/react';
 import { useVoiceChat } from '../hooks/useVoiceChat';
 import { ParticipantAudio } from './ParticipantAudio';
 
@@ -13,7 +13,7 @@ interface VoiceChatPanelProps {
   userId: string;
   participants: Participant[];
   isOpen: boolean;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export function VoiceChatPanel({

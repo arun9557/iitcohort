@@ -1,5 +1,3 @@
-import { ref, set, onValue, off } from 'firebase/database';
-import { realtimeDb as database } from '../firebase';
 
 export interface RTCConfig {
   iceServers: RTCIceServer[];
@@ -54,7 +52,7 @@ export class WebRTCService {
     if (!this.localStream) return;
 
     try {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      this.audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       const source = this.audioContext.createMediaStreamSource(this.localStream);
       this.analyser = this.audioContext.createAnalyser();
       this.analyser.fftSize = 256;

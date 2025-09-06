@@ -1,5 +1,5 @@
 import { FaMicrophone, FaMicrophoneSlash, FaPhoneSlash } from 'react-icons/fa';
-import { Button, HStack, Tooltip, useToast } from '@chakra-ui/react';
+import { Button, HStack } from '@chakra-ui/react';
 import { useVoiceChat } from '../hooks/useVoiceChat';
 
 interface VoiceChatButtonProps {
@@ -9,7 +9,6 @@ interface VoiceChatButtonProps {
 }
 
 export function VoiceChatButton({ roomId, userId, participantIds }: VoiceChatButtonProps) {
-  const toast = useToast();
   const { isConnected, isMuted, connect, disconnect, toggleMute } = useVoiceChat(
     roomId,
     userId,
@@ -29,24 +28,21 @@ export function VoiceChatButton({ roomId, userId, participantIds }: VoiceChatBut
   };
 
   return (
-    <HStack spacing={2}>
+    <HStack gap={2}>
       <Button
-        leftIcon={isConnected ? <FaPhoneSlash /> : <FaMicrophone />}
         colorScheme={isConnected ? 'red' : 'green'}
         onClick={handleToggleVoiceChat}
       >
-        {isConnected ? 'Leave Voice' : 'Join Voice'}
+        {isConnected ? <FaPhoneSlash /> : <FaMicrophone />} {isConnected ? 'Leave Voice' : 'Join Voice'}
       </Button>
       
       {isConnected && (
-        <Tooltip label={isMuted ? 'Unmute' : 'Mute'}>
-          <Button
-            leftIcon={isMuted ? <FaMicrophoneSlash /> : <FaMicrophone />}
-            onClick={toggleMute}
-          >
-            {isMuted ? 'Unmute' : 'Mute'}
-          </Button>
-        </Tooltip>
+        <Button
+          colorScheme={isMuted ? 'gray' : 'red'}
+          onClick={toggleMute}
+        >
+          {isMuted ? <FaMicrophoneSlash /> : <FaMicrophone />} {isMuted ? 'Unmute' : 'Mute'}
+        </Button>
       )}
     </HStack>
   );

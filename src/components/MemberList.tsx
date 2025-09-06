@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FaUser, FaUserTie, FaGraduationCap, FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
-import { ChakraProvider } from '@chakra-ui/react';
 import { useToast } from '@chakra-ui/toast';
 import Peer from 'simple-peer';
 import io, { Socket } from 'socket.io-client';
@@ -80,7 +79,7 @@ export default function MemberList({ currentUserId }: MemberListProps) {
       audio.id = `user-audio-${currentUserId}`;
       audio.muted = true; // Mute local audio to prevent echo
       audio.autoplay = true;
-      // @ts-ignore - playsInline is valid for audio elements in browsers
+      // @ts-expect-error - playsInline is valid for audio elements in browsers
       audio.playsInline = true;
       document.body.appendChild(audio);
       userAudio.current = audio;
@@ -94,17 +93,6 @@ export default function MemberList({ currentUserId }: MemberListProps) {
     }
   }, [currentUserId]);
   
-  const handleStreamError = useCallback((error: Error) => {
-    console.error('Error accessing microphone:', error);
-    setLoading(false);
-    toast({
-      title: 'Microphone Error',
-      description: 'Failed to access microphone. Please check permissions.',
-      status: 'error',
-      duration: 5000,
-      isClosable: true,
-    });
-  }, [toast]);
 
   // Set up socket event listeners
   useEffect(() => {
@@ -159,7 +147,7 @@ export default function MemberList({ currentUserId }: MemberListProps) {
           audioElement = document.createElement('audio');
           audioElement.id = `user-audio-${callerID}`;
           audioElement.autoplay = true;
-          // @ts-ignore - playsInline is valid for audio elements in browsers
+          // @ts-expect-error - playsInline is valid for audio elements in browsers
           audioElement.playsInline = true;
           document.body.appendChild(audioElement);
         }
@@ -169,7 +157,7 @@ export default function MemberList({ currentUserId }: MemberListProps) {
         setupAudioMeter(remoteStream, callerID);
       });
 
-      peer.signal(signal);
+      peer.signal(signal as string);
       peersRef.current = [...peersRef.current, { peerID: callerID, peer }];
     };
 
@@ -193,7 +181,7 @@ export default function MemberList({ currentUserId }: MemberListProps) {
       socket.off('receive-signal', handleIncomingSignal);
       socket.off('user-disconnected', handleUserDisconnected);
     };
-  }, [stream, currentUserId, createPeer, setupAudioMeter]);
+  }, [stream, currentUserId]);
 
   // Create a peer connection
   const createPeer = (userToSignal: string, callerID: string, stream: MediaStream) => {
@@ -216,7 +204,17 @@ export default function MemberList({ currentUserId }: MemberListProps) {
     peer.on('stream', (remoteStream) => {
       // Handle incoming stream
       console.log('Received stream from:', userToSignal);
-      // You'll need to create audio elements for each peer's stream
+      // Create audio element for this peer's stream
+      let audioElement = document.getElementById(`user-audio-${userToSignal}`) as HTMLAudioElement;
+      if (!audioElement) {
+        audioElement = document.createElement('audio');
+        audioElement.id = `user-audio-${userToSignal}`;
+        audioElement.autoplay = true;
+        // @ts-expect-error - playsInline is valid for audio elements in browsers
+        audioElement.playsInline = true;
+        document.body.appendChild(audioElement);
+      }
+      audioElement.srcObject = remoteStream;
     });
 
     return peer;
@@ -224,7 +222,7 @@ export default function MemberList({ currentUserId }: MemberListProps) {
 
   // Setup audio level meter for voice activity detection
   const setupAudioMeter = (audioStream: MediaStream, userId: string) => {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     const analyser = audioContext.createAnalyser();
     const microphone = audioContext.createMediaStreamSource(audioStream);
     const javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);

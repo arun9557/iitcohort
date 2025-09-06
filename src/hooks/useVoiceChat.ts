@@ -23,7 +23,6 @@ export function useVoiceChat(roomId: string, userId: string, participantIds: str
 
   const rtcService = useRef<WebRTCService | null>(null);
   const signalingService = useRef<FirebaseSignalingService | null>(null);
-  const audioElements = useRef<Record<string, HTMLAudioElement>>({});
   const speakingInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize services
@@ -45,42 +44,42 @@ export function useVoiceChat(roomId: string, userId: string, participantIds: str
   useEffect(() => {
     if (!signalingService.current || !rtcService.current) return;
 
-    const handleSignal = async (signal: any) => {
+    const handleSignal = async (signal: { type: string; from: string; data: unknown; to: string }) => {
       if (!rtcService.current) return;
 
       try {
         switch (signal.type) {
           case 'offer':
-            const answer = await rtcService.current.createAnswer(signal.from, signal.data);
+            const answer = await rtcService.current.createAnswer(signal.from, signal.data as RTCSessionDescriptionInit);
             await signalingService.current?.sendAnswer(signal.from, answer);
             break;
           case 'answer':
-            await rtcService.current.setRemoteDescription(signal.from, signal.data);
+            await rtcService.current.setRemoteDescription(signal.from, signal.data as RTCSessionDescriptionInit);
             break;
           case 'candidate':
-            await rtcService.current.addIceCandidate(signal.from, signal.data);
+            await rtcService.current.addIceCandidate(signal.from, signal.data as RTCIceCandidateInit);
             break;
           case 'hangup':
             rtcService.current.closePeerConnection(signal.from);
             setState(prev => ({
               ...prev,
-              participants: { ...prev.participants, [signal.from]: undefined as any },
+              participants: { ...prev.participants, [signal.from]: undefined as unknown as MediaStream },
               connectionStates: { ...prev.connectionStates, [signal.from]: 'closed' }
             }));
             break;
           case 'user-joined':
-            if (signal.data.userId !== userId) {
+            if ((signal.data as { userId: string }).userId !== userId) {
               setState(prev => ({
                 ...prev,
-                onlineUsers: [...prev.onlineUsers.filter(id => id !== signal.data.userId), signal.data.userId]
+                onlineUsers: [...prev.onlineUsers.filter(id => id !== (signal.data as { userId: string }).userId), (signal.data as { userId: string }).userId]
               }));
             }
             break;
           case 'user-left':
             setState(prev => ({
               ...prev,
-              onlineUsers: prev.onlineUsers.filter(id => id !== signal.data.userId),
-              participants: { ...prev.participants, [signal.data.userId]: undefined as any }
+              onlineUsers: prev.onlineUsers.filter(id => id !== (signal.data as { userId: string }).userId),
+              participants: { ...prev.participants, [(signal.data as { userId: string }).userId]: undefined as unknown as MediaStream }
             }));
             break;
         }

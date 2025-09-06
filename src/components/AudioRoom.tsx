@@ -19,6 +19,7 @@ export default function AudioRoom({
     // WebRTC connections are managed by MemberList
     const initMedia = async () => {
       try {
+        console.log(`Initializing audio for room: ${roomId}, user: ${userId}`);
         const stream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
             echoCancellation: true,
@@ -43,7 +44,7 @@ export default function AudioRoom({
     return () => {
       // Stream cleanup is handled by the parent component (MemberList)
     };
-  }, [onStreamReady, onStreamError]);
+  }, [roomId, userId, onStreamReady, onStreamError]);
 
   // This component doesn't render anything visible
   // It's just a container for audio stream initialization
