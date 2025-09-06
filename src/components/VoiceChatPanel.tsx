@@ -21,7 +21,6 @@ export function VoiceChatPanel({
   userId,
   participants,
   isOpen,
-  onClose,
 }: VoiceChatPanelProps) {
   const { isConnected, isMuted, isSpeaking, connect, disconnect, toggleMute } = useVoiceChat(
     roomId,

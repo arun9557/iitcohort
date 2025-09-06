@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FaUser, FaUserTie, FaGraduationCap, FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
-import { useToast } from '@chakra-ui/toast';
 import Peer from 'simple-peer';
 import io, { Socket } from 'socket.io-client';
 import AudioRoom from './AudioRoom';
@@ -40,7 +39,6 @@ export default function MemberList({ currentUserId }: MemberListProps) {
   const userAudio = useRef<HTMLAudioElement | null>(null);
   const peersRef = useRef<{ peerID: string; peer: Peer.Instance }[]>([]);
   const socketRef = useRef<Socket | null>(null);
-  const toast = useToast();
 
   // Fetch members from Firestore
   useEffect(() => {

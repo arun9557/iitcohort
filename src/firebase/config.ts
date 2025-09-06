@@ -31,4 +31,5 @@ if (getApps().length === 0) {
 export { app, db, auth };
 
 // For backward compatibility
-export default { app, db, auth };
+const firebaseExports = { app, db, auth };
+export default firebaseExports;

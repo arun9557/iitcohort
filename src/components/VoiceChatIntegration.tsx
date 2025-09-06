@@ -22,13 +22,10 @@ interface VoiceChatIntegrationProps {
 export function VoiceChatIntegration({
   roomId,
   userId,
-  userDisplayName,
-  userPhotoURL,
   participantIds,
   participants
 }: VoiceChatIntegrationProps) {
   const [showVoicePanel, setShowVoicePanel] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const {
     isConnected,
@@ -36,23 +33,12 @@ export function VoiceChatIntegration({
     participants: participantStreams,
     isSpeaking,
     connectionStates,
-    onlineUsers,
-    connect,
-    disconnect,
-    toggleMute
+    onlineUsers
   } = useVoiceChat(roomId, userId, participantIds);
 
 
   return (
     <VStack gap={4} align="stretch">
-      {/* Error Display */}
-      {error && (
-        <Box p={3} bg="red.50" border="1px solid" borderColor="red.200" borderRadius="md">
-          <Text color="red.600" fontSize="sm">
-            ⚠️ {error}
-          </Text>
-        </Box>
-      )}
 
       {/* Voice Chat Controls */}
       <Box>
