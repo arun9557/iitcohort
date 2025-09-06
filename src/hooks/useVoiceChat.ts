@@ -131,7 +131,7 @@ export function useVoiceChat(roomId: string, userId: string, participantIds: str
       console.error('Failed to connect to voice chat:', error);
       throw error;
     }
-  }, [participantIds, userId]);
+  }, [participantIds, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Disconnect from voice chat
   const disconnect = useCallback(async () => {

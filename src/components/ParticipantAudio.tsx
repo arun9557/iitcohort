@@ -29,7 +29,7 @@ export function ParticipantAudio({ userId, displayName, isSpeaking, stream }: Pa
   return (
     <VStack
       p={2}
-      spacing={2}
+      gap={2}
       borderRadius="md"
       bg={isSpeaking ? 'blue.50' : 'transparent'}
       borderWidth={isSpeaking ? '1px' : '1px'}
@@ -62,7 +62,7 @@ export function ParticipantAudio({ userId, displayName, isSpeaking, stream }: Pa
         </Box>
       </Box>
       
-      <Text fontSize="sm" fontWeight="medium" textAlign="center" noOfLines={1}>
+      <Text fontSize="sm" fontWeight="medium" textAlign="center" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {displayName}
       </Text>
       
