@@ -193,7 +193,7 @@ export default function MemberList({ currentUserId }: MemberListProps) {
       socket.off('receive-signal', handleIncomingSignal);
       socket.off('user-disconnected', handleUserDisconnected);
     };
-  }, [stream, currentUserId, addPeer, createPeer]);
+  }, [stream, currentUserId, createPeer, setupAudioMeter]);
 
   // Create a peer connection
   const createPeer = (userToSignal: string, callerID: string, stream: MediaStream) => {
