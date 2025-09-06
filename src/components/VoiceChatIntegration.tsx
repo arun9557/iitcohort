@@ -1,6 +1,6 @@
 // Example integration of the new voice chat system
 import React, { useState } from 'react';
-import { Box, VStack, HStack, Text, Button, Badge, Alert, AlertIcon } from '@chakra-ui/react';
+import { Box, VStack, HStack, Text, Button, Badge } from '@chakra-ui/react';
 import { useVoiceChat } from '../hooks/useVoiceChat';
 import { VoiceChatButton } from './VoiceChatButton';
 import { VoiceChatPanel } from './VoiceChatPanel';
@@ -69,23 +69,24 @@ export function VoiceChatIntegration({
   };
 
   return (
-    <VStack spacing={4} align="stretch">
+    <VStack gap={4} align="stretch">
       {/* Error Display */}
       {error && (
-        <Alert status="error">
-          <AlertIcon />
-          {error}
-        </Alert>
+        <Box p={3} bg="red.50" border="1px solid" borderColor="red.200" borderRadius="md">
+          <Text color="red.600" fontSize="sm">
+            ⚠️ {error}
+          </Text>
+        </Box>
       )}
 
       {/* Voice Chat Controls */}
       <Box>
         <HStack justify="space-between" align="center">
-          <VStack align="start" spacing={1}>
+          <VStack align="start" gap={1}>
             <Text fontSize="lg" fontWeight="bold">
               Voice Chat
             </Text>
-            <HStack spacing={2}>
+            <HStack gap={2}>
               <Badge colorScheme={isConnected ? 'green' : 'gray'}>
                 {isConnected ? 'Connected' : 'Disconnected'}
               </Badge>
@@ -100,7 +101,7 @@ export function VoiceChatIntegration({
             </HStack>
           </VStack>
 
-          <HStack spacing={2}>
+          <HStack gap={2}>
             <VoiceChatButton
               roomId={roomId}
               userId={userId}
@@ -125,7 +126,7 @@ export function VoiceChatIntegration({
           <Text fontSize="sm" color="gray.600" mb={2}>
             Connection Status:
           </Text>
-          <HStack spacing={2} wrap="wrap">
+          <HStack gap={2} wrap="wrap">
             {participants.map((participant) => {
               const connectionState = connectionStates[participant.id];
               const isOnline = onlineUsers.includes(participant.id);
@@ -167,7 +168,7 @@ export function VoiceChatIntegration({
           <Text fontSize="sm" color="gray.600" mb={2}>
             Active Audio Streams:
           </Text>
-          <HStack spacing={4} wrap="wrap">
+          <HStack gap={4} wrap="wrap">
             {participants.map((participant) => {
               const stream = participantStreams[participant.id];
               const isParticipantSpeaking = isSpeaking[participant.id];
@@ -179,7 +180,6 @@ export function VoiceChatIntegration({
                   key={participant.id}
                   userId={participant.id}
                   displayName={participant.displayName}
-                  photoURL={participant.photoURL}
                   stream={stream}
                   isSpeaking={isParticipantSpeaking}
                 />

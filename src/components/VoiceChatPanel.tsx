@@ -40,7 +40,7 @@ export function VoiceChatPanel({
       boxShadow="lg"
       borderRadius="lg"
       p={4}
-      spacing={4}
+      gap={4}
       maxW="400px"
       maxH="80vh"
       overflowY="auto"
@@ -69,7 +69,7 @@ export function VoiceChatPanel({
         </Box>
       </Box>
 
-      <SimpleGrid columns={2} spacing={4} width="100%">
+      <SimpleGrid columns={2} gap={4} width="100%">
         {participants.map((participant) => (
           <ParticipantAudio
             key={participant.id}
