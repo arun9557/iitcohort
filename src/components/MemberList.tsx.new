@@ -1,0 +1,286 @@
+'use client';
+
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { FaUser, FaUserTie, FaGraduationCap, FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
+import { useToast } from '@chakra-ui/react';
+import Peer from 'simple-peer';
+import io, { Socket } from 'socket.io-client';
+import AudioRoom from './AudioRoom';
+
+interface Member {
+  uid: string;
+  displayName: string;
+  email: string;
+  role?: string;
+  photoURL?: string;
+}
+
+interface MemberListProps {
+  currentUserId: string;
+}
+
+export default function MemberList({ currentUserId }: MemberListProps) {
+  // Local state
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [muted, setMuted] = useState<{ [uid: string]: boolean }>({});
+  const [speaking, setSpeaking] = useState<{ [uid: string]: boolean }>({});
+  
+  // Refs
+  const userAudio = useRef<HTMLAudioElement | null>(null);
+  const peersRef = useRef<{ peerID: string; peer: Peer.Instance }[]>([]);
+  const socketRef = useRef<Socket | null>(null);
+  const toast = useToast();
+
+  // Fetch members from Firestore
+  useEffect(() => {
+    const q = collection(db, 'users');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const membersData: Member[] = [];
+      snapshot.forEach((doc) => {
+        membersData.push({ uid: doc.id, ...doc.data() } as Member);
+      });
+      setMembers(membersData);
+      setLoading(false);
+    });
+    
+    return () => unsubscribe();
+  }, []);
+
+  // Initialize socket connection
+  useEffect(() => {
+    socketRef.current = io('http://localhost:5000');
+    
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Handle stream from AudioRoom component
+  const handleStreamReady = useCallback((newStream: MediaStream) => {
+    console.log('Stream ready from AudioRoom', newStream);
+    setStream(newStream);
+    
+    // Create audio element for local preview (muted)
+    if (!userAudio.current) {
+      const audio = document.createElement('audio');
+      audio.muted = true; // Mute local audio to prevent echo
+      audio.autoplay = true;
+      document.body.appendChild(audio);
+      userAudio.current = audio;
+    }
+    userAudio.current.srcObject = newStream;
+    
+    // Join the room after getting media access
+    if (socketRef.current) {
+      socketRef.current.emit('join-room', 'members-audio-room', currentUserId);
+      console.log('Joined room with ID:', currentUserId);
+    }
+  }, [currentUserId]);
+  
+  const handleStreamError = useCallback((error: Error) => {
+    console.error('Error accessing microphone:', error);
+    setLoading(false);
+    toast({
+      title: 'Microphone Error',
+      description: 'Failed to access microphone. Please check permissions.',
+      status: 'error',
+      duration: 5000,
+      isClosable: true,
+    });
+  }, [toast]);
+
+  // Set up socket event listeners
+  useEffect(() => {
+    if (!socketRef.current || !stream) return;
+    
+    const socket = socketRef.current;
+    
+    const handleUserConnected = (otherUserId: string) => {
+      if (!stream || !otherUserId) return;
+      
+      console.log('User connected:', otherUserId);
+      if (otherUserId !== currentUserId) {  // Don't connect to self
+        const peer = createPeer(otherUserId, socket.id || 'unknown', stream);
+        peersRef.current = [...peersRef.current, { peerID: otherUserId, peer }];
+        console.log('Created peer for user:', otherUserId);
+      }
+    };
+
+    const handleIncomingSignal = (payload: { signal: any; callerID: string }) => {
+      const { signal, callerID } = payload;
+      console.log('Received signal from:', callerID);
+      
+      const peer = new Peer({
+        initiator: false,
+        trickle: false,
+        stream: stream || undefined,
+      });
+
+      peer.on('signal', (signalData) => {
+        socket.emit('returning-signal', { signal: signalData, callerID });
+      });
+
+      peer.on('stream', (remoteStream) => {
+        // Handle incoming stream
+        console.log('Received stream from:', callerID);
+        // You'll need to create audio elements for each peer's stream
+      });
+
+      peer.signal(signal);
+      peersRef.current = [...peersRef.current, { peerID: callerID, peer }];
+    };
+
+    const handleUserDisconnected = (userId: string) => {
+      console.log('User disconnected:', userId);
+      const peerObj = peersRef.current.find(p => p.peerID === userId);
+      if (peerObj) {
+        peerObj.peer.destroy();
+      }
+      peersRef.current = peersRef.current.filter(p => p.peerID !== userId);
+    };
+
+    // Set up event listeners
+    socket.on('user-connected', handleUserConnected);
+    socket.on('receive-signal', handleIncomingSignal);
+    socket.on('user-disconnected', handleUserDisconnected);
+
+    // Clean up
+    return () => {
+      socket.off('user-connected', handleUserConnected);
+      socket.off('receive-signal', handleIncomingSignal);
+      socket.off('user-disconnected', handleUserDisconnected);
+    };
+  }, [stream, currentUserId]);
+
+  // Create a peer connection
+  const createPeer = (userToSignal: string, callerID: string, stream: MediaStream) => {
+    if (!socketRef.current) return new Peer();
+    
+    const peer = new Peer({
+      initiator: true,
+      trickle: false,
+      stream,
+    });
+
+    peer.on('signal', (signal) => {
+      socketRef.current?.emit('send-signal', {
+        userToSignal,
+        callerID,
+        signal,
+      });
+    });
+
+    peer.on('stream', (remoteStream) => {
+      // Handle incoming stream
+      console.log('Received stream from:', userToSignal);
+      // You'll need to create audio elements for each peer's stream
+    });
+
+    return peer;
+  };
+
+  // Toggle mute for local audio
+  const toggleMute = () => {
+    if (!stream) return;
+    
+    const audioTracks = stream.getAudioTracks();
+    const isCurrentlyMuted = !audioTracks[0]?.enabled;
+    
+    audioTracks.forEach(track => {
+      track.enabled = isCurrentlyMuted;
+    });
+    
+    setMuted(prev => ({
+      ...prev,
+      [currentUserId]: !isCurrentlyMuted
+    }));
+  };
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      // Clean up all peer connections
+      peersRef.current.forEach(({ peer }) => {
+        peer.destroy();
+      });
+      
+      // Clean up local stream
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
+      // Remove audio element
+      if (userAudio.current) {
+        document.body.removeChild(userAudio.current);
+      }
+    };
+  }, [stream]);
+
+  // Render member list
+  if (loading) {
+    return <div>Loading members...</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* AudioRoom component for handling media stream */}
+      <AudioRoom 
+        roomId="members-audio-room" 
+        userId={currentUserId}
+        onStreamReady={handleStreamReady}
+        onStreamError={handleStreamError}
+      />
+      
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Members ({members.length})</h2>
+        <button
+          onClick={toggleMute}
+          className={`p-2 rounded-full ${muted[currentUserId] ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'}`}
+          aria-label={muted[currentUserId] ? 'Unmute' : 'Mute'}
+        >
+          {muted[currentUserId] ? <FaMicrophoneSlash /> : <FaMicrophone />}
+        </button>
+      </div>
+      
+      <div className="space-y-2">
+        {members.map((member) => (
+          <div 
+            key={member.uid}
+            className={`flex items-center p-3 rounded-lg ${speaking[member.uid] ? 'bg-blue-50' : 'bg-white'} shadow`}
+          >
+            <div className="flex-shrink-0 mr-3">
+              {member.role === 'admin' ? (
+                <FaUserTie className="text-yellow-500" />
+              ) : member.role === 'faculty' ? (
+                <FaGraduationCap className="text-blue-500" />
+              ) : (
+                <FaUser className="text-gray-500" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {member.displayName}
+                {member.uid === currentUserId && ' (You)'}
+              </p>
+              <p className="text-xs text-gray-500 truncate">{member.email}</p>
+            </div>
+            <div className="ml-2">
+              {speaking[member.uid] && (
+                <span className="flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
