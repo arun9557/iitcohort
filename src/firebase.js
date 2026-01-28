@@ -5,14 +5,14 @@ import { getStorage } from 'firebase/storage';
 import { getDatabase, ref, set, update } from 'firebase/database';
 // Firebase configuration using environment variables with fallback
 const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAKLqd9z98nRFTbM5YtPHisPrpc1Bwcx8c",
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "iitcohort-75b1d.firebaseapp.com",
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "iitcohort-75b1d",
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "iitcohort-75b1d.appspot.com",
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "319591295433",
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:319591295433:web:b99386c388f2432e85e018",
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAKLqd9z98nRFTbM5YtPHisPrpc1Bwcx8c",
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "iitcohort-75b1d.firebaseapp.com",
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "iitcohort-75b1d",
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "iitcohort-75b1d.appspot.com",
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "319591295433",
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:319591295433:web:b99386c388f2432e85e018",
     measurementId: "G-YWKC0WB5BP",
-    databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || "https://iitcohort-75b1d-default-rtdb.firebaseio.com"
+    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://iitcohort-75b1d-default-rtdb.firebaseio.com"
 };
 // Initialize Firebase - ensure we always have an app instance
 let app;
