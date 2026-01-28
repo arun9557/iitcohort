@@ -30,6 +30,7 @@
     "@radix-ui/react-tooltip": "^1.0.7",
     "@types/firebase": "^2.4.32",
     "@vitejs/plugin-react": "^5.1.2",
+    "autoprefixer": "^10.4.23",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "crypto-js": "^4.2.0",
@@ -48,12 +49,12 @@
     "simple-peer": "^9.11.1",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^2.5.4",
+    "tailwindcss": "^4.1.18",
     "vite": "^7.3.1",
     "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4.1.11",
     "@types/crypto-js": "^4.2.2",
     "@types/lodash.isequal": "^4.5.8",
     "@types/lodash.throttle": "^4.1.9",
@@ -61,12 +62,10 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/simple-peer": "^9.11.8",
-    "autoprefixer": "^10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
     "inherits": "^2.0.4",
     "postcss": "^8.5.6",
-    "readable-stream": "^4.7.0",
-    "tailwindcss": "^4.1.11"
+    "readable-stream": "^4.7.0"
   }
 }
