@@ -1,4 +1,3 @@
-'use client';
 import React, { useState } from 'react';
 import { Users, Plus, X } from 'lucide-react';
 

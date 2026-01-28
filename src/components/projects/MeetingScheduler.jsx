@@ -1,4 +1,3 @@
-'use client';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, Users, Plus, Edit, Trash2, Video, MapPin, CheckCircle, AlertCircle } from 'lucide-react';

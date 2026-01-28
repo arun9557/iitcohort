@@ -1,4 +1,3 @@
-'use client';
 import React, { useState, useEffect, useRef, memo, forwardRef } from 'react';
 import Editor from '@monaco-editor/react';
 import { Play, Trash2, ArrowUp, ArrowDown, XCircle, Bold, Italic, Code2, Heading1, Heading2, Heading3, List, ListOrdered, Quote, Image as ImageIcon, Smile, Link2 } from 'lucide-react';

@@ -1,4 +1,3 @@
-'use client';
 import { useState } from 'react';
 import { Bell } from 'lucide-react';
 import NotificationsPopup from './NotificationsPopup';

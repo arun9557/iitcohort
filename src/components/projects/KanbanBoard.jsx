@@ -1,4 +1,3 @@
-'use client';
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, DragOverlay, } from '@dnd-kit/core';

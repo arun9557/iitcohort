@@ -1,4 +1,3 @@
-"use client";
 import React, { useRef, useState, useEffect } from "react";
 const DEFAULT_PEN_COLOR = "#222";
 const COLOR_PALETTE = ["#222", "#e11d48", "#2563eb", "#059669", "#f59e42", "#fbbf24", "#fff", "#000"];

@@ -1,4 +1,3 @@
-'use client';
 import React, { useState, useRef, useCallback, createRef } from 'react';
 import { Plus, Share2, Wifi, Menu, Download, Edit2, Trash2, Play } from 'lucide-react';
 import { Suspense, lazy } from 'react';

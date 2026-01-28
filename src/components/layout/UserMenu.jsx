@@ -1,4 +1,3 @@
-'use client';
 import { useState } from 'react';
 const UserMenu = ({ user, onLogout, onSwitchAccount }) => {
     const [isOpen, setIsOpen] = useState(false);

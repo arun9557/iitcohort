@@ -1,4 +1,3 @@
-'use client';
 import { useRef } from 'react';
 export default function VoiceRoom({ roomName = "IITJodhpurBatchVoiceRoom" }) {
     const containerRef = useRef(null);

@@ -32,8 +32,6 @@ import QuickActions from './components/dashboard/QuickActions';
 // Owner usernames (email prefix) - used in isOwner function
 // Main component wrapped with Suspense to handle the workStore error
 export default function App() {
-  // ... rest of HomeContent code ...
-
   // Live date and time state (must be at the very top)
   const [dateTime, setDateTime] = useState(new Date());
   useEffect(() => {

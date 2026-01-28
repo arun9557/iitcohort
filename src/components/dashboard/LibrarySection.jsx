@@ -1,4 +1,3 @@
-'use client';
 import React, { useState } from 'react';
 import { FileText, Video, ImageIcon, Music, BookOpen, Download } from 'lucide-react';
 

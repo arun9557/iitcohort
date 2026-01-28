@@ -1,4 +1,3 @@
-'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Bell, X } from 'lucide-react';
 const NotificationsPopup = ({ notifications, onClose, onClear, onAddNotification, isAdmin = false }) => {
