@@ -1,11 +1,11 @@
 'use client';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db } from '../../firebase/config';
 import { FaUser, FaUserTie, FaGraduationCap, FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import Peer from 'simple-peer';
 import io from 'socket.io-client';
-import AudioRoom from './AudioRoom';
+import AudioRoom from '../communication/AudioRoom';
 export default function MemberList({ currentUserId }) {
     // Local state
     const [members, setMembers] = useState([]);

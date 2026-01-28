@@ -1,6 +1,6 @@
 import { FaMicrophone, FaMicrophoneSlash, FaPhoneSlash } from 'react-icons/fa';
 import { Button, HStack } from '@chakra-ui/react';
-import { useVoiceChat } from '../hooks/useVoiceChat';
+import { useVoiceChat } from '../../hooks/useVoiceChat';
 export function VoiceChatButton({ roomId, userId, participantIds }) {
     const { isConnected, isMuted, connect, disconnect, toggleMute } = useVoiceChat(roomId, userId, participantIds);
     const handleToggleVoiceChat = () => {

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { storage, db } from '../firebase';
+import { storage, db } from '../../firebase';
 import { Upload, File, Download, Loader } from 'lucide-react';
 const FileUpload = ({ onFileUploaded, maxFileSize = 50, className = '', allowedTypes = ['*'] }) => {
     const [isDragOver, setIsDragOver] = useState(false);

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import FileUpload from './FileUpload';
 import FileManager from './FileManager';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 const categories = [
     'All Categories',
     'Computer Science',

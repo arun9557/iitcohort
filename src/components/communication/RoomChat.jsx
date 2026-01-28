@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { collection, addDoc, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { Send } from 'lucide-react';
-import { isOwner } from '../utils/auth';
+import { isOwner } from '../../utils/auth';
 export default function RoomChat({ roomId, currentUser }) {
     const [messages, setMessages] = useState([]);
     const [message, setMessage] = useState('');

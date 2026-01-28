@@ -1,7 +1,7 @@
 // Example integration of the new voice chat system
 import React, { useState } from 'react';
 import { Box, VStack, HStack, Text, Button, Badge } from '@chakra-ui/react';
-import { useVoiceChat } from '../hooks/useVoiceChat';
+import { useVoiceChat } from '../../hooks/useVoiceChat';
 import { VoiceChatButton } from './VoiceChatButton';
 import { VoiceChatPanel } from './VoiceChatPanel';
 import { ParticipantAudio } from './ParticipantAudio';

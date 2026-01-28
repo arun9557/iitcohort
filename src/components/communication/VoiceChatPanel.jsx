@@ -1,5 +1,5 @@
 import { VStack, Heading, SimpleGrid, Box, Button } from '@chakra-ui/react';
-import { useVoiceChat } from '../hooks/useVoiceChat';
+import { useVoiceChat } from '../../hooks/useVoiceChat';
 import { ParticipantAudio } from './ParticipantAudio';
 export function VoiceChatPanel({ roomId, userId, participants, isOpen, }) {
     const { isConnected, isMuted, isSpeaking, connect, disconnect, toggleMute } = useVoiceChat(roomId, userId, participants.map(p => p.id));

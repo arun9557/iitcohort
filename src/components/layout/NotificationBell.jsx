@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Bell } from 'lucide-react';
 import NotificationsPopup from './NotificationsPopup';
-import { isOwner } from '../utils/auth';
+import { isOwner } from '../../utils/auth';
 const NotificationBell = ({ notifications, onClear, onAddNotification, user }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (<div className="relative">

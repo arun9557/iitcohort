@@ -7,7 +7,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calendar, User, GripVertical, X } from 'lucide-react';
 import { collection, onSnapshot, query, orderBy, addDoc, updateDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 // Add owner badge logic (reuse from other files)
 const ownerUsernames = [
     'arunshekhram',

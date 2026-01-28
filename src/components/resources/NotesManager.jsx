@@ -1,10 +1,10 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { FaSearch, FaUserCircle, FaPlus, FaBell, FaTag, FaArchive, FaTrash, FaThumbtack, FaUndo } from 'react-icons/fa';
-import { auth } from '../firebase';
+import { auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 const sidebarItems = [
     { key: 'notes', label: 'Notes', icon: <FaTag /> },
     { key: 'reminders', label: 'Reminders', icon: <FaBell /> },

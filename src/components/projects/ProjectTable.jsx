@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from '../../firebase";
 import { motion } from "framer-motion";
 import { Plus, Edit, Trash2, X, Layout, Calendar } from "lucide-react";
 import KanbanBoard from "./KanbanBoard";
-import { auth } from '../firebase';
+import { auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 const statusColors = {
     Active: "bg-green-100 text-green-800",

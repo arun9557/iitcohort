@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, Users, Plus, Edit, Trash2, Video, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, Timestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 const initialMeetings = [
     {
         id: '1',
