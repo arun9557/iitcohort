@@ -17,25 +17,11 @@ const firebaseConfig = {
 // Initialize Firebase - ensure we always have an app instance
 let app;
 if (getApps().length === 0) {
-    try {
-        app = initializeApp(firebaseConfig);
-        console.log('✅ Firebase initialized successfully');
-    }
-    catch (error) {
-        console.error('❌ Firebase initialization failed:', error);
-        // Create a minimal app with default config to prevent crashes
-        app = initializeApp({
-            apiKey: "dummy-key",
-            authDomain: "dummy.firebaseapp.com",
-            projectId: "dummy",
-            storageBucket: "dummy.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:dummy"
-        });
-    }
-}
-else {
+    app = initializeApp(firebaseConfig);
+    console.log('✅ Firebase initialized successfully');
+} else {
     app = getApps()[0];
+    console.log('✅ Using existing Firebase app');
 }
 // Initialize Firebase services
 export const db = getFirestore(app);
